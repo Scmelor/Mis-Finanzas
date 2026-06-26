@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Finanzas</title>
+<style>
+  :root{
+    --bg:#fdf6fb; --card:#ffffff; --text:#5b5b6b; --muted:#9b9bae;
+    --shadow:0 8px 24px rgba(180,150,200,.18);
+    --hogar:#e89cb6; --hogar-bg:#fdeef4;
+    --pers:#b39ddb; --pers-l:#e0d4f2; --pers-bg:#f4f0fb;
+    --aho:#8fcdb4; --aho-bg:#eef9f3;
+    --deuda:#f0a07e; --deuda-bg:#fdf0e9;
+    --ing:#e9c879; --ing-bg:#fdf7e6;
+    --libre:#d8cfe0;
+    --verde:#4fae82; --rojo:#d96a72;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  body{background:linear-gradient(135deg,#fdf6fb 0%,#f3f0fc 50%,#eef6fb 100%);color:var(--text);min-height:100vh;padding:24px 16px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:2rem;font-weight:700;color:#7a6a8a;text-align:center;margin-bottom:4px}
+  .sub{text-align:center;color:var(--muted);margin-bottom:24px;font-size:.95rem}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:780px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:22px;padding:22px;box-shadow:var(--shadow)}
+  .card h2{font-size:1.05rem;font-weight:700;margin-bottom:14px;color:#7a6a8a;display:flex;align-items:center;gap:8px}
+  .card.ing{border-top:5px solid var(--ing)}
+  .card.hogar{border-top:5px solid var(--hogar)}
+  .card.pers{border-top:5px solid var(--pers)}
+  .card.aho{border-top:5px solid var(--aho)}
+  .card.deuda{border-top:5px solid var(--deuda)}
+  label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:6px;font-weight:600}
+  input,select{width:100%;padding:11px 13px;border:2px solid #f0e8f5;border-radius:13px;font-size:.95rem;background:#fdfbff;color:var(--text);outline:none;transition:.2s}
+  input:focus,select:focus{border-color:var(--pers);background:#fff}
+  .row{display:flex;gap:10px}.row>*{flex:1}
+  button{cursor:pointer;border:none;font-weight:700;transition:.2s;font-size:.92rem}
+  .btn{width:100%;padding:12px;border-radius:13px;color:#fff;margin-top:12px}
+  .btn.ing{background:var(--ing)}.btn.hogar{background:var(--hogar)}.btn.pers{background:var(--pers)}
+  .btn:hover{filter:brightness(.96);transform:translateY(-1px)}
+  .mini{padding:9px 14px;border-radius:11px;background:#efe7f5;color:#7a6a8a;font-size:.85rem}
+  .mini:hover{background:#e5dbef}
+  .summary{grid-column:1/-1;background:linear-gradient(135deg,#fce4ef,#e7ddf7);border-radius:24px;padding:22px;display:grid;grid-template-columns:repeat(5,1fr);gap:14px;text-align:center}
+  @media(max-width:780px){.summary{grid-template-columns:1fr 1fr}}
+  .stat .lab{font-size:.74rem;color:#8a7a9a;font-weight:600;margin-bottom:4px}
+  .stat .val{font-size:1.25rem;font-weight:800;color:#6a5a7a}
+  .stat .val.pos{color:var(--verde)}.stat .val.neg{color:var(--rojo)}
+  .item{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:12px;margin-bottom:7px;background:var(--hogar-bg);cursor:pointer;transition:.15s;user-select:none}
+  .item:hover{filter:brightness(.98)}
+  .item.pers-i{background:var(--pers-bg);cursor:default}
+  .item.ing-i{background:var(--ing-bg);cursor:default}
+  .check{width:22px;height:22px;border-radius:50%;border:2px solid var(--hogar);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;background:#fff}
+  .item.paid .check{background:var(--hogar);border-color:var(--hogar)}
+  .item.paid .nm{text-decoration:line-through;color:var(--muted)}
+  .nm{flex:1;font-weight:600;font-size:.9rem}
+  .amt{font-weight:700;font-size:.9rem}
+  .del{background:none;color:var(--muted);font-size:1rem;padding:1px 7px;border-radius:7px}
+  .del:hover{background:#fff;color:var(--rojo)}
+  .empty{text-align:center;color:var(--muted);padding:14px;font-size:.88rem}
+  .note{font-size:.82rem;color:var(--muted);margin-top:8px}
+  .note b{color:#7a6a8a}
+  .reco{background:var(--aho-bg);border-radius:12px;padding:10px 13px;margin-top:12px;font-size:.86rem;color:#3f7a63;font-weight:600}
+  .bar{height:20px;background:#efe7f5;border-radius:11px;overflow:hidden;margin-top:10px}
+  .bar>span{display:block;height:100%;border-radius:11px;transition:.5s;width:0}
+  .bar.pers>span{background:linear-gradient(90deg,var(--pers),var(--pers-l))}
+  .pie-card{grid-column:1/-1}
+  .pie-wrap{display:flex;align-items:center;gap:18px;justify-content:center;flex-wrap:wrap}
+  .legend{display:flex;flex-direction:column;gap:9px;font-size:.86rem;min-width:210px}
+  .legend div{display:flex;align-items:center;gap:9px}
+  .legend .sw{width:14px;height:14px;border-radius:4px;flex-shrink:0}
+  .legend b{margin-left:auto;color:#6a5a7a}
+  .hist{grid-column:1/-1}
+  .year-blk{margin-bottom:14px}
+  .year-blk h3{color:#7a6a8a;font-size:1rem;margin-bottom:8px;border-bottom:2px solid #f0e8f5;padding-bottom:5px}
+  .month-chip{display:inline-flex;align-items:center;gap:7px;background:#f4f0fb;border-radius:12px;padding:8px 12px;margin:0 8px 8px 0;font-size:.85rem;cursor:pointer}
+  .month-chip:hover{background:#e9e0f7}
+  .month-chip .x{color:var(--muted);font-weight:700}
+  .month-chip .x:hover{color:var(--rojo)}
+  .saved-banner{grid-column:1/-1;background:#eef9f3;border:1.5px solid var(--aho);border-radius:14px;padding:10px 16px;text-align:center;color:#3f7a63;font-weight:600;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🌸 Mis Finanzas</h1>
+  <p class="sub">Ingresos · Hogar · Personales · Ahorro · Deuda — todo en un solo lugar</p>
+
+  <div class="grid">
+    <!-- RESUMEN -->
+    <div class="summary">
+      <div class="stat"><div class="lab">💵 Ingresos</div><div class="val pos" id="s-ing">$0</div></div>
+      <div class="stat"><div class="lab">🏠 Hogar</div><div class="val" id="s-hog">$0</div></div>
+      <div class="stat"><div class="lab">🛍️ Personales</div><div class="val" id="s-per">$0</div></div>
+      <div class="stat"><div class="lab">🐷 Ahorro</div><div class="val" id="s-aho">$0</div></div>
+      <div class="stat"><div class="lab">💳 Libre</div><div class="val" id="s-libre">$0</div></div>
+    </div>
+
+    <!-- INGRESOS -->
+    <div class="card ing" style="grid-column:1/-1">
+      <h2>💵 Ingresos del mes <span id="curlabel" style="margin-left:auto;font-size:.78rem;font-weight:600;color:var(--muted)"></span></h2>
+      <div id="ing-list"></div>
+      <div class="row" style="margin-top:6px">
+        <div style="flex:1.3"><label>Concepto / categoría</label>
+        <input type="text" id="i-name" placeholder="Ej: Salario, Freelance, Arriendo recibido"></div>
+        <div><label>Valor</label>
+        <input type="number" id="i-amt" placeholder="0" min="0"></div>
+      </div>
+      <button class="btn ing" id="i-add">＋ Agregar ingreso</button>
+    </div>
+
+    <!-- HOGAR -->
+    <div class="card hogar">
+      <h2>🏠 Hogar — gastos fijos</h2>
+      <div class="note" id="hogar-note">Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷</div>
+      <div id="hogar-list"></div>
+      <div class="row" style="margin-top:12px">
+        <div style="flex:1.3"><label>Concepto / categoría</label>
+        <input type="text" id="h-name" placeholder="Ej: Arriendo, Luz, Internet"></div>
+        <div><label>Valor</label>
+        <input type="number" id="h-amt" placeholder="0" min="0"></div>
+      </div>
+      <button class="btn hogar" id="h-add">＋ Agregar gasto fijo</button>
+      <div class="note" id="tpl-note" style="margin-top:10px">🔁 Tus gastos fijos se guardan y reaparecen al empezar un mes nuevo.</div>
+    </div>
+
+    <!-- PERSONALES -->
+    <div class="card pers">
+      <h2>🛍️ Gastos personales</h2>
+      <label>Límite que te asignas este mes</label>
+      <input type="number" id="p-limit" placeholder="Ej: 600000" min="0">
+      <div class="bar pers"><span id="p-bar"></span></div>
+      <div class="note" id="p-note">Define un límite y registra tus gastos del día a día.</div>
+      <div id="pers-list" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:10px">
+        <div style="flex:1.3"><label>Nombre corto</label>
+        <input type="text" id="p-name" placeholder="Ej: Café, Cine, Ropa"></div>
+        <div><label>Valor</label>
+        <input type="number" id="p-amt" placeholder="0" min="0"></div>
+      </div>
+      <button class="btn pers" id="p-add">＋ Agregar gasto personal</button>
+    </div>
+
+    <!-- AHORRO -->
+    <div class="card aho">
+      <h2>🐷 Ahorro</h2>
+      <label>¿Cuánto destinas a ahorro este mes?</label>
+      <input type="number" id="ahorro" placeholder="Ej: 400000" min="0">
+      <div class="reco" id="aho-reco">💡 Recomendado (20% de tus ingresos): $0</div>
+      <div class="note" id="aho-note"></div>
+    </div>
+
+    <!-- DEUDA -->
+    <div class="card deuda">
+      <h2>💳 Deuda</h2>
+      <label>Total que debes en tarjetas de crédito</label>
+      <input type="number" id="deuda" placeholder="Ej: 1200000" min="0">
+      <div class="note" id="deuda-note"></div>
+    </div>
+
+    <!-- TORTA -->
+    <div class="card pie-card">
+      <h2>📊 Distribución de tus ingresos (100%)</h2>
+      <div class="pie-wrap">
+        <svg id="pie" width="240" height="240" viewBox="0 0 240 240"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="note" id="pie-note" style="text-align:center"></div>
+    </div>
+
+    <!-- CERRAR MES -->
+    <div class="card hist">
+      <h2>📁 Guardar y cerrar mes</h2>
+      <div class="row" style="align-items:flex-end">
+        <div><label>Año</label>
+          <select id="cl-year"></select></div>
+        <div><label>Mes</label>
+          <select id="cl-month"></select></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label>
+          <button class="btn aho" style="background:var(--aho);margin:0;padding:11px 18px;color:#fff" id="cl-save">💾 Guardar mes</button></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label>
+          <button class="mini" style="padding:11px 16px" id="cl-new">🌱 Empezar mes nuevo</button></div>
+      </div>
+      <div class="saved-banner" id="saved-banner"></div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="card hist">
+      <h2>🗂️ Historial por año y mes</h2>
+      <div id="hist-body"><div class="empty">Aún no has guardado ningún mes 🍃</div></div>
+    </div>
+
+    <div style="grid-column:1/-1;text-align:center;margin-top:4px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="mini" id="export" style="background:var(--aho-bg);color:#3f7a63">⬇️ Exportar mis datos (.txt)</button>
+      <button class="mini" id="reset">🗑️ Borrar TODO (mes actual e historial)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const COL={hogar:'#e89cb6',pers:'#b39ddb',aho:'#8fcdb4',deuda:'#f0a07e',libre:'#d8cfe0'};
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CO');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let DB={current:blank(),archive:{},fixedTemplate:[]};
+function blank(){return{incomes:[],hogar:[],pLimit:0,pers:[],ahorro:0,deuda:0};}
+
+function migrate(m){
+  if(!m)return blank();
+  if(!Array.isArray(m.incomes)){
+    m.incomes = (typeof m.income==='number'&&m.income>0)?[{name:'Ingreso',amt:m.income}]:[];
+  }
+  delete m.income;
+  m.hogar=m.hogar||[];m.pers=m.pers||[];
+  m.pLimit=m.pLimit||0;m.ahorro=m.ahorro||0;m.deuda=m.deuda||0;
+  return m;
+}
+function load(){try{const d=JSON.parse(localStorage.getItem('finanzasV2'));if(d){DB=d;}}catch(e){}
+  DB.current=migrate(DB.current);DB.archive=DB.archive||{};DB.fixedTemplate=DB.fixedTemplate||[];
+  for(const y in DB.archive)for(const m in DB.archive[y])DB.archive[y][m]=migrate(DB.archive[y][m]);
+}
+function save(){localStorage.setItem('finanzasV2',JSON.stringify(DB));}
+
+const C=()=>DB.current;
+const incomeTotal=()=>C().incomes.reduce((s,x)=>s+x.amt,0);
+const hogarTotal=()=>C().hogar.reduce((s,x)=>s+x.amt,0);
+const hogarPaid=()=>C().hogar.filter(x=>x.paid).reduce((s,x)=>s+x.amt,0);
+const persSpent=()=>C().pers.reduce((s,x)=>s+x.amt,0);
+const syncTemplate=()=>{DB.fixedTemplate=C().hogar.map(x=>({name:x.name,amt:x.amt}));};
+
+function render(){
+  const c=C(), income=incomeTotal();
+  const allocated=hogarTotal()+c.pLimit+c.ahorro+c.deuda;
+  const libre=income-allocated;
+  $('s-ing').textContent=fmt(income);
+  $('s-hog').textContent=fmt(hogarTotal());
+  $('s-per').textContent=fmt(c.pLimit);
+  $('s-aho').textContent=fmt(c.ahorro);
+  const sl=$('s-libre');sl.textContent=fmt(libre);sl.className='val '+(libre>=0?'pos':'neg');
+
+  // INGRESOS list
+  const il=$('ing-list');
+  il.innerHTML=c.incomes.length?c.incomes.map((x,i)=>
+    `<div class="item ing-i"><span class="nm">${esc(x.name)}</span>
+     <span class="amt">${fmt(x.amt)}</span>
+     <button class="del" data-idel="${i}">✕</button></div>`).join(''):
+    '<div class="empty">Agrega tus fuentes de ingreso 🌼</div>';
+  il.querySelectorAll('[data-idel]').forEach(b=>b.onclick=()=>{c.incomes.splice(+b.dataset.idel,1);save();render();});
+
+  // HOGAR list
+  const hl=$('hogar-list');
+  hl.innerHTML=c.hogar.map((x,i)=>
+    `<div class="item ${x.paid?'paid':''}" data-i="${i}">
+      <span class="check">${x.paid?'✓':''}</span>
+      <span class="nm">${esc(x.name)}</span>
+      <span class="amt">${fmt(x.amt)}</span>
+      <button class="del" data-del="${i}">✕</button>
+    </div>`).join('');
+  hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{
+    if(e.target.dataset.del!==undefined)return;
+    const i=+el.dataset.i;c.hogar[i].paid=!c.hogar[i].paid;save();render();});
+  hl.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.hogar.splice(+b.dataset.del,1);syncTemplate();save();render();});
+  const pend=hogarTotal()-hogarPaid(), nPend=c.hogar.filter(x=>!x.paid).length;
+  $('hogar-note').innerHTML=c.hogar.length
+    ? `Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${nPend}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`
+    : 'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';
+
+  // PERSONALES
+  const spent=persSpent(), freeP=c.pLimit-spent;
+  const prog=c.pLimit>0?Math.min(100,spent/c.pLimit*100):0;
+  $('p-bar').style.width=prog+'%';
+  $('p-bar').style.background=freeP<0?'linear-gradient(90deg,#d96a72,#f0a07e)':'';
+  const pl=$('pers-list');
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>
+    `<div class="item pers-i"><span class="nm">${esc(x.name)}</span>
+     <span class="amt">${fmt(x.amt)}</span>
+     <button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
+  pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);save();render();});
+  $('p-note').innerHTML=c.pLimit>0
+    ? (freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`
+              :`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`)
+    : 'Define un límite y registra tus gastos del día a día.';
+
+  // AHORRO: recomendacion 20%
+  const reco=income*0.20;
+  $('aho-reco').innerHTML=`💡 Recomendado (20% de tus ingresos): <b style="color:#2f6a52">${fmt(reco)}</b>`;
+  $('aho-note').innerHTML=income>0&&c.ahorro>0
+    ? (c.ahorro>=reco?`✅ Vas <b>${Math.round(c.ahorro/income*100)}%</b>, ¡por encima del 20%! 🌱`
+                     :`Vas en <b>${Math.round(c.ahorro/income*100)}%</b>. Te faltan <b>${fmt(reco-c.ahorro)}</b> para el 20%.`)
+    : '';
+  $('deuda-note').innerHTML=c.deuda>0?`Saldo pendiente en tarjetas: <b style="color:var(--rojo)">${fmt(c.deuda)}</b>`:'';
+
+  drawPie(c,income,libre);
+  $('curlabel').textContent=MONTHS[new Date().getMonth()]+' '+new Date().getFullYear();
+}
+
+/* ---- TORTA ---- */
+function polar(cx,cy,r,deg){const a=(deg-90)*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+function slicePath(cx,cy,r,a0,a1){const[x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(cx,cy,r,a1);const big=(a1-a0)>180?1:0;return`M${cx},${cy} L${x0},${y0} A${r},${r} 0 ${big} 1 ${x1},${y1} Z`;}
+
+function drawPie(c,income,libre){
+  const svg=$('pie'),leg=$('legend'),cx=120,cy=120,r=95;
+  const segs=[
+    {k:'hogar',lab:'Hogar',v:hogarTotal()},
+    {k:'pers',lab:'Personales',v:c.pLimit},
+    {k:'aho',lab:'Ahorro',v:c.ahorro},
+    {k:'deuda',lab:'Deuda',v:c.deuda},
+  ].filter(s=>s.v>0);
+  if(libre>0)segs.push({k:'libre',lab:'Libre',v:libre});
+
+  const totalSeg=segs.reduce((s,x)=>s+x.v,0);
+  svg.innerHTML='';leg.innerHTML='';
+  if(totalSeg<=0){
+    svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#f4eef9"/><text x="${cx}" y="${cy}" text-anchor="middle" dy=".3em" fill="#b3a6c4" font-size="13">Sin datos aún</text>`;
+    leg.innerHTML='<div style="color:#9b9bae">Ingresa tus valores 🍃</div>';
+    $('pie-note').textContent='';return;
+  }
+  const denom=income>0?income:totalSeg;
+  let ang=0;
+  segs.forEach(s=>{
+    const frac=s.v/totalSeg, a1=ang+frac*360, mid=ang+frac*180;
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',slicePath(cx,cy,r,ang,a1));
+    p.setAttribute('fill',COL[s.k]);p.setAttribute('stroke','#fff');p.setAttribute('stroke-width','2');
+    svg.appendChild(p);
+    const pct=Math.round(s.v/denom*100);
+    if(frac>0.05){ // % adentro
+      const[ix,iy]=polar(cx,cy,r*0.62,mid);
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',ix);t.setAttribute('y',iy);t.setAttribute('text-anchor','middle');t.setAttribute('dy','.35em');
+      t.setAttribute('fill','#fff');t.setAttribute('font-size','13');t.setAttribute('font-weight','800');
+      t.textContent=pct+'%';svg.appendChild(t);
+    }
+    ang=a1;
+    leg.innerHTML+=`<div><span class="sw" style="background:${COL[s.k]}"></span>${s.lab} · ${pct}% <b>${fmt(s.v)}</b></div>`;
+  });
+  // hueco donut
+  const hole=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  hole.setAttribute('cx',cx);hole.setAttribute('cy',cy);hole.setAttribute('r',r*0.45);hole.setAttribute('fill','#fff');
+  svg.appendChild(hole);
+  const ct=document.createElementNS('http://www.w3.org/2000/svg','text');
+  ct.setAttribute('x',cx);ct.setAttribute('y',cy-6);ct.setAttribute('text-anchor','middle');ct.setAttribute('fill','#9b8bae');ct.setAttribute('font-size','11');
+  ct.textContent='Ingresos';svg.appendChild(ct);
+  const cv=document.createElementNS('http://www.w3.org/2000/svg','text');
+  cv.setAttribute('x',cx);cv.setAttribute('y',cy+12);cv.setAttribute('text-anchor','middle');cv.setAttribute('fill','#6a5a7a');cv.setAttribute('font-size','13');cv.setAttribute('font-weight','800');
+  cv.textContent=fmt(income);svg.appendChild(cv);
+  $('pie-note').innerHTML=libre<0?`⚠️ Estás asignando <b style="color:var(--rojo)">${fmt(-libre)}</b> más de lo que ingresas.`:'';
+}
+
+/* ---- HISTORIAL ---- */
+function monthLibre(s){
+  const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);
+  return inc-((s.hogar||[]).reduce((a,x)=>a+x.amt,0)+(s.pLimit||0)+(s.ahorro||0)+(s.deuda||0));
+}
+function renderHist(){
+  const body=$('hist-body'), years=Object.keys(DB.archive).sort((a,b)=>b-a);
+  if(!years.length){body.innerHTML='<div class="empty">Aún no has guardado ningún mes 🍃</div>';return;}
+  body.innerHTML=years.map(y=>{
+    const months=Object.keys(DB.archive[y]).sort((a,b)=>MONTHS.indexOf(a)-MONTHS.indexOf(b));
+    const chips=months.map(m=>
+      `<span class="month-chip" data-y="${y}" data-m="${m}">📅 ${m} · libre ${fmt(monthLibre(DB.archive[y][m]))} <span class="x" data-dy="${y}" data-dm="${m}">✕</span></span>`).join('');
+    return `<div class="year-blk"><h3>📆 ${y}</h3>${chips}</div>`;
+  }).join('');
+  body.querySelectorAll('.month-chip').forEach(ch=>ch.onclick=e=>{
+    if(e.target.dataset.dm!==undefined)return;
+    const s=DB.archive[ch.dataset.y][ch.dataset.m];
+    if(confirm('¿Cargar '+ch.dataset.m+' '+ch.dataset.y+' como mes actual? (lo de ahora se reemplaza, guárdalo antes si lo necesitas)')){
+      DB.current=migrate(JSON.parse(JSON.stringify(s)));save();syncInputs();render();window.scrollTo({top:0,behavior:'smooth'});}
+  });
+  body.querySelectorAll('.x').forEach(x=>x.onclick=e=>{
+    e.stopPropagation();
+    if(confirm('¿Borrar '+x.dataset.dm+' '+x.dataset.dy+' del historial?')){
+      delete DB.archive[x.dataset.dy][x.dataset.dm];
+      if(!Object.keys(DB.archive[x.dataset.dy]).length)delete DB.archive[x.dataset.dy];
+      save();renderHist();}
+  });
+}
+
+/* ---- inputs ---- */
+function syncInputs(){
+  $('p-limit').value=C().pLimit||'';$('ahorro').value=C().ahorro||'';$('deuda').value=C().deuda||'';
+}
+$('p-limit').oninput=e=>{C().pLimit=+e.target.value||0;save();render();};
+$('ahorro').oninput=e=>{C().ahorro=+e.target.value||0;save();render();};
+$('deuda').oninput=e=>{C().deuda=+e.target.value||0;save();render();};
+
+$('i-add').onclick=()=>{
+  const n=$('i-name').value.trim(),a=+$('i-amt').value;
+  if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}
+  C().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';save();render();$('i-name').focus();
+};
+$('h-add').onclick=()=>{
+  const n=$('h-name').value.trim(),a=+$('h-amt').value;
+  if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}
+  C().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();save();render();$('h-name').focus();
+};
+$('p-add').onclick=()=>{
+  const n=$('p-name').value.trim(),a=+$('p-amt').value;
+  if(!n||!a||a<=0){alert('Escribe un nombre y un valor válido 🌷');return;}
+  C().pers.push({name:n,amt:a});$('p-name').value='';$('p-amt').value='';save();render();$('p-name').focus();
+};
+$('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
+$('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
+$('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
+
+/* ---- cerrar mes ---- */
+function fillSelectors(){
+  const yS=$('cl-year'),mS=$('cl-month'),now=new Date();
+  yS.innerHTML='';for(let y=now.getFullYear()-1;y<=now.getFullYear()+1;y++)yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
+  mS.innerHTML='';MONTHS.forEach((m,i)=>mS.innerHTML+=`<option ${i===now.getMonth()?'selected':''}>${m}</option>`);
+}
+$('cl-save').onclick=()=>{
+  const y=$('cl-year').value,m=$('cl-month').value;
+  if(!DB.archive[y])DB.archive[y]={};
+  if(DB.archive[y][m]&&!confirm(m+' '+y+' ya existe. ¿Reemplazarlo?'))return;
+  DB.archive[y][m]=JSON.parse(JSON.stringify(C()));
+  save();renderHist();
+  const b=$('saved-banner');b.style.display='block';b.textContent='✅ Guardado: '+m+' '+y+'. Lo encuentras en el historial abajo.';
+  setTimeout(()=>b.style.display='none',4000);
+};
+$('cl-new').onclick=()=>{
+  if(confirm('¿Empezar un mes nuevo? Tus gastos fijos se mantienen (sin marcar como pagados). Guarda el mes actual antes si lo necesitas.')){
+    DB.current=blank();
+    DB.current.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
+    save();syncInputs();render();window.scrollTo({top:0,behavior:'smooth'});}
+};
+$('reset').onclick=()=>{
+  if(confirm('¿Borrar TODO incluyendo el historial y los gastos fijos guardados? Esta acción no se puede deshacer.')){
+    DB={current:blank(),archive:{},fixedTemplate:[]};save();syncInputs();render();renderHist();}
+};
+
+/* ---- exportar a texto plano ---- */
+function monthToText(s){
+  const L=[];
+  const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);
+  const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);
+  const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);
+  const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);
+  const libre=inc-(hog+(s.pLimit||0)+(s.ahorro||0)+(s.deuda||0));
+  L.push('  INGRESOS: '+fmt(inc));
+  (s.incomes||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
+  L.push('  HOGAR (fijos): '+fmt(hog)+'  | Pagado: '+fmt(hogPag)+'  | Pendiente: '+fmt(hog-hogPag));
+  (s.hogar||[]).forEach(x=>L.push('    - ['+(x.paid?'PAGADO':'PENDIENTE')+'] '+x.name+': '+fmt(x.amt)));
+  L.push('  PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas)+'  | Libre: '+fmt((s.pLimit||0)-perGas));
+  (s.pers||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
+  L.push('  AHORRO: '+fmt(s.ahorro||0)+'   (recomendado 20%: '+fmt(inc*0.2)+')');
+  L.push('  DEUDA tarjetas: '+fmt(s.deuda||0));
+  L.push('  >> LIBRE DEL MES: '+fmt(libre));
+  return L.join('\n');
+}
+$('export').onclick=()=>{
+  const now=new Date();
+  let t='===== MIS FINANZAS =====\n';
+  t+='Exportado: '+now.toLocaleDateString('es-CO')+' '+now.toLocaleTimeString('es-CO')+'\n\n';
+  t+='----- MES ACTUAL ('+MONTHS[now.getMonth()]+' '+now.getFullYear()+') -----\n';
+  t+=monthToText(C())+'\n\n';
+  const years=Object.keys(DB.archive).sort((a,b)=>b-a);
+  if(years.length){
+    t+='----- HISTORIAL GUARDADO -----\n';
+    years.forEach(y=>{
+      t+='\n## '+y+'\n';
+      Object.keys(DB.archive[y]).sort((a,b)=>MONTHS.indexOf(a)-MONTHS.indexOf(b)).forEach(m=>{
+        t+='\n['+m+' '+y+']\n'+monthToText(DB.archive[y][m])+'\n';
+      });
+    });
+  }
+  t+='\n----- RESPALDO (no borrar para reimportar) -----\nDATA:'+JSON.stringify(DB);
+  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='mis-finanzas-'+now.toISOString().slice(0,10)+'.txt';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+};
+
+load();fillSelectors();syncInputs();render();renderHist();
+</script>
+</body>
+</html>
