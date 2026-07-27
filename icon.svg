@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7c8d8"/>
+      <stop offset="0.55" stop-color="#dcc6ee"/>
+      <stop offset="1" stop-color="#c2dbf0"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f1e9fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <!-- barras de crecimiento -->
+  <g>
+    <rect x="140" y="322" width="46" height="62" rx="14" fill="#ffffff" opacity="0.5"/>
+    <rect x="233" y="292" width="46" height="92" rx="14" fill="#ffffff" opacity="0.65"/>
+    <rect x="326" y="252" width="46" height="132" rx="14" fill="#ffffff" opacity="0.8"/>
+  </g>
+  <!-- flecha de crecimiento -->
+  <polyline points="150,300 240,250 300,278 372,214" fill="none" stroke="#7cc6a0" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <polygon points="372,214 344,208 366,190" fill="#7cc6a0"/>
+  <!-- moneda -->
+  <circle cx="256" cy="196" r="120" fill="url(#coin)"/>
+  <circle cx="256" cy="196" r="120" fill="none" stroke="#e2d2f2" stroke-width="7"/>
+  <circle cx="256" cy="196" r="100" fill="none" stroke="#efe6f8" stroke-width="4"/>
+  <text x="256" y="200" text-anchor="middle" dominant-baseline="central" font-family="Georgia, 'Times New Roman', serif" font-size="150" font-weight="bold" fill="#a98fd6">$</text>
+</svg>

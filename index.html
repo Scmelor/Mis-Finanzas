@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Mis Finanzas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e7ddf7">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mis Finanzas">
 <style>
   :root{
     --card:#ffffff; --text:#5b5b6b; --muted:#9b9bae;
@@ -13,6 +21,7 @@
     --aho:#8fcdb4; --aho-bg:#eef9f3;
     --deuda:#f0a07e; --deuda-bg:#fdf0e9;
     --ing:#e9c879; --ing-bg:#fdf7e6;
+    --inv:#7ec4d6; --inv-bg:#e9f6fa;
     --libre:#d8cfe0;
     --verde:#4fae82; --rojo:#d96a72;
   }
@@ -20,7 +29,9 @@
   body{background:linear-gradient(135deg,#fdf6fb 0%,#f3f0fc 50%,#eef6fb 100%);color:var(--text);min-height:100vh;padding:18px 14px 40px}
   .wrap{max-width:1000px;margin:0 auto}
   h1{font-size:1.7rem;font-weight:700;color:#7a6a8a;text-align:center;margin-bottom:10px}
-  /* nav meses */
+  .tabs{display:flex;gap:8px;background:#fff;border-radius:16px;padding:6px;box-shadow:var(--shadow);margin-bottom:12px}
+  .tab{flex:1;padding:12px;border-radius:12px;background:transparent;color:#9b8bae;font-weight:700;font-size:.95rem;border:none;cursor:pointer}
+  .tab.active{background:linear-gradient(135deg,var(--pers),var(--hogar));color:#fff}
   .monthnav{display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;border-radius:20px;padding:10px 12px;box-shadow:var(--shadow);margin-bottom:6px}
   .monthnav button{background:linear-gradient(135deg,var(--pers),var(--hogar));color:#fff;width:44px;height:44px;border-radius:14px;font-size:1.3rem;border:none;cursor:pointer;flex-shrink:0;line-height:1}
   .monthnav button:active{transform:scale(.92)}
@@ -33,12 +44,14 @@
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:780px){.grid{grid-template-columns:1fr}}
   .card{background:var(--card);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+  .card+.card{margin-top:16px}
   .card h2{font-size:1.02rem;font-weight:700;margin-bottom:12px;color:#7a6a8a;display:flex;align-items:center;gap:8px}
   .card.ing{border-top:5px solid var(--ing)}
   .card.hogar{border-top:5px solid var(--hogar)}
   .card.pers{border-top:5px solid var(--pers)}
   .card.aho{border-top:5px solid var(--aho)}
   .card.deuda{border-top:5px solid var(--deuda)}
+  .card.inv{border-top:5px solid var(--inv)}
   label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px;font-weight:600}
   input,select{width:100%;padding:12px 13px;border:2px solid #f0e8f5;border-radius:13px;font-size:16px;background:#fdfbff;color:var(--text);outline:none;transition:.2s}
   input:focus,select:focus{border-color:var(--pers);background:#fff}
@@ -46,6 +59,7 @@
   button{cursor:pointer;border:none;font-weight:700;transition:.2s;font-size:.92rem}
   .btn{width:100%;padding:13px;border-radius:13px;color:#fff;margin-top:12px}
   .btn.ing{background:var(--ing)}.btn.hogar{background:var(--hogar)}.btn.pers{background:var(--pers)}
+  .btn.inv{background:linear-gradient(135deg,var(--inv),var(--aho))}
   .btn:active{transform:scale(.98)}
   .mini{padding:10px 14px;border-radius:11px;background:#efe7f5;color:#7a6a8a;font-size:.85rem}
   .summary{grid-column:1/-1;background:linear-gradient(135deg,#fce4ef,#e7ddf7);border-radius:22px;padding:20px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center}
@@ -57,6 +71,8 @@
   .item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;margin-bottom:7px;background:var(--hogar-bg);cursor:pointer;transition:.15s;user-select:none}
   .item.pers-i{background:var(--pers-bg);cursor:default}
   .item.ing-i{background:var(--ing-bg);cursor:default}
+  .item.inv-i{background:var(--inv-bg);cursor:default}
+  .item.auto{background:var(--aho-bg);cursor:default}
   .check{width:24px;height:24px;border-radius:50%;border:2px solid var(--hogar);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;background:#fff}
   .item.paid .check{background:var(--hogar);border-color:var(--hogar)}
   .item.paid .nm{text-decoration:line-through;color:var(--muted)}
@@ -80,7 +96,15 @@
   .topbar .who{font-weight:600}
   .linkbtn{background:none;color:var(--pers);font-weight:700;font-size:.8rem;padding:4px 6px}
   .banner{background:var(--ing-bg);border:1.5px solid var(--ing);border-radius:12px;padding:9px 14px;text-align:center;color:#8a6a1a;font-size:.82rem;margin-bottom:12px}
-  /* login gate */
+  /* inversiones */
+  .inv-result{background:var(--inv-bg);border-radius:14px;padding:16px;margin-top:14px}
+  .inv-big{font-size:1.5rem;font-weight:800;color:#2f6a52;margin:2px 0}
+  .inv-scroll{max-height:220px;overflow:auto;margin-top:10px;border-radius:10px;border:1px solid #e4eef1}
+  .inv-tbl{width:100%;border-collapse:collapse;font-size:.8rem;background:#fff}
+  .inv-tbl th,.inv-tbl td{padding:7px 9px;text-align:right;border-bottom:1px solid #eef2f4}
+  .inv-tbl th:first-child,.inv-tbl td:first-child{text-align:left}
+  .inv-tbl thead th{position:sticky;top:0;background:#f4fafc;color:#6a8a95}
+  /* login */
   .gate{position:fixed;inset:0;background:linear-gradient(135deg,#fdf6fb,#f0ecfa);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
   .gate .box{background:#fff;border-radius:24px;padding:28px 24px;box-shadow:var(--shadow);width:100%;max-width:360px;text-align:center}
   .gate h2{color:#7a6a8a;margin-bottom:4px;font-size:1.5rem}
@@ -95,7 +119,6 @@
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="gate" id="gate" style="display:none">
   <div class="box">
     <h2>🌸 Mis Finanzas</h2>
@@ -114,109 +137,136 @@
     <button class="linkbtn" id="logout" style="display:none">Cerrar sesión</button>
   </div>
   <h1>🌸 Mis Finanzas</h1>
-
   <div class="banner" id="local-banner" style="display:none">Modo local (solo este dispositivo). Configura Firebase para sincronizar.</div>
 
-  <div class="monthnav">
-    <button id="prevM" title="Mes anterior">◀</button>
-    <div class="mtitle" id="mtitle">—</div>
-    <button id="nextM" title="Mes siguiente / nuevo">▶</button>
+  <div class="tabs">
+    <button class="tab active" id="tab-fin">💰 Finanzas</button>
+    <button class="tab" id="tab-inv">📈 Inversiones</button>
   </div>
-  <div class="mhint">◀ mes anterior · nuevo mes ▶ &nbsp;·&nbsp; también puedes deslizar</div>
 
-  <div id="app">
-    <div class="grid">
-      <div class="summary">
-        <div class="stat"><div class="lab">💵 Ingresos</div><div class="val pos" id="s-ing">$0</div></div>
-        <div class="stat"><div class="lab">🏠 Hogar</div><div class="val" id="s-hog">$0</div></div>
-        <div class="stat"><div class="lab">🛍️ Personales</div><div class="val" id="s-per">$0</div></div>
-        <div class="stat"><div class="lab">🐷 Ahorro</div><div class="val" id="s-aho">$0</div></div>
-        <div class="stat"><div class="lab">💳 Libre</div><div class="val" id="s-libre">$0</div></div>
-      </div>
+  <!-- ============ FINANZAS ============ -->
+  <div id="view-fin">
+    <div class="monthnav">
+      <button id="prevM" title="Mes anterior">◀</button>
+      <div class="mtitle" id="mtitle">—</div>
+      <button id="nextM" title="Mes siguiente / nuevo">▶</button>
+    </div>
+    <div class="mhint">◀ mes anterior · nuevo mes ▶ &nbsp;·&nbsp; también puedes deslizar</div>
 
-      <div class="card ing" style="grid-column:1/-1">
-        <h2>💵 Ingresos del mes</h2>
-        <div id="ing-list"></div>
-        <div class="row" style="margin-top:6px">
-          <div style="flex:1.3"><label>Concepto / categoría</label>
-          <input type="text" id="i-name" placeholder="Ej: Salario, Freelance"></div>
-          <div><label>Valor</label>
-          <input type="number" id="i-amt" placeholder="0" min="0" inputmode="numeric"></div>
+    <div id="app">
+      <div class="grid">
+        <div class="summary">
+          <div class="stat"><div class="lab">💵 Ingresos</div><div class="val pos" id="s-ing">$0</div></div>
+          <div class="stat"><div class="lab">🏠 Hogar</div><div class="val" id="s-hog">$0</div></div>
+          <div class="stat"><div class="lab">🛍️ Personales</div><div class="val" id="s-per">$0</div></div>
+          <div class="stat"><div class="lab">🐷 Ahorro</div><div class="val" id="s-aho">$0</div></div>
+          <div class="stat"><div class="lab">💳 Libre</div><div class="val" id="s-libre">$0</div></div>
         </div>
-        <button class="btn ing" id="i-add">＋ Agregar ingreso</button>
-      </div>
 
-      <div class="card hogar">
-        <h2>🏠 Hogar — gastos fijos</h2>
-        <div class="note" id="hogar-note">Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷</div>
-        <div id="hogar-list"></div>
-        <div class="row" style="margin-top:12px">
-          <div style="flex:1.3"><label>Concepto / categoría</label>
-          <input type="text" id="h-name" placeholder="Ej: Arriendo, Luz"></div>
-          <div><label>Valor</label>
-          <input type="number" id="h-amt" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="card ing" style="grid-column:1/-1">
+          <h2>💵 Ingresos del mes</h2>
+          <div id="ing-list"></div>
+          <div class="row" style="margin-top:6px">
+            <div style="flex:1.3"><label>Concepto / categoría</label>
+            <input type="text" id="i-name" placeholder="Ej: Salario, Freelance"></div>
+            <div><label>Valor</label>
+            <input type="number" id="i-amt" placeholder="0" min="0" inputmode="numeric"></div>
+          </div>
+          <button class="btn ing" id="i-add">＋ Agregar ingreso</button>
         </div>
-        <button class="btn hogar" id="h-add">＋ Agregar gasto fijo</button>
-        <div class="note" style="margin-top:10px">🔁 Tus gastos fijos reaparecen automáticamente al crear un mes nuevo.</div>
-      </div>
 
-      <div class="card pers">
-        <h2>🛍️ Gastos personales</h2>
-        <label>Límite que te asignas este mes</label>
-        <input type="number" id="p-limit" placeholder="Ej: 600000" min="0" inputmode="numeric">
-        <div class="bar pers"><span id="p-bar"></span></div>
-        <div class="note" id="p-note">Define un límite y registra tus gastos del día a día.</div>
-        <div id="pers-list" style="margin-top:12px"></div>
-        <div class="row" style="margin-top:10px">
-          <div style="flex:1.3"><label>Nombre corto</label>
-          <input type="text" id="p-name" placeholder="Ej: Café, Cine"></div>
-          <div><label>Valor</label>
-          <input type="number" id="p-amt" placeholder="0" min="0" inputmode="numeric"></div>
+        <div class="card hogar">
+          <h2>🏠 Hogar — gastos fijos</h2>
+          <div class="note" id="hogar-note">Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷</div>
+          <div id="hogar-list"></div>
+          <div class="row" style="margin-top:12px">
+            <div style="flex:1.3"><label>Concepto / categoría</label>
+            <input type="text" id="h-name" placeholder="Ej: Arriendo, Luz"></div>
+            <div><label>Valor</label>
+            <input type="number" id="h-amt" placeholder="0" min="0" inputmode="numeric"></div>
+          </div>
+          <button class="btn hogar" id="h-add">＋ Agregar gasto fijo</button>
+          <div class="note" style="margin-top:10px">🔁 Tus gastos fijos reaparecen automáticamente al crear un mes nuevo.</div>
         </div>
-        <button class="btn pers" id="p-add">＋ Agregar gasto personal</button>
-      </div>
 
-      <div class="card aho">
-        <h2>🐷 Ahorro</h2>
-        <label>¿Cuánto destinas a ahorro este mes?</label>
-        <input type="number" id="ahorro" placeholder="Ej: 400000" min="0" inputmode="numeric">
-        <div class="reco" id="aho-reco">💡 Recomendado (20% de tus ingresos): $0</div>
-        <div class="note" id="aho-note"></div>
-      </div>
-
-      <div class="card deuda">
-        <h2>💳 Deuda</h2>
-        <label>Total que debes en tarjetas de crédito</label>
-        <input type="number" id="deuda" placeholder="Ej: 1200000" min="0" inputmode="numeric">
-        <div class="note" id="deuda-note"></div>
-      </div>
-
-      <div class="card pie-card">
-        <h2>📊 Distribución de tus ingresos (100%)</h2>
-        <div class="pie-wrap">
-          <svg id="pie" width="240" height="240" viewBox="0 0 240 240"></svg>
-          <div class="legend" id="legend"></div>
+        <div class="card pers">
+          <h2>🛍️ Gastos personales</h2>
+          <label>Límite que te asignas este mes</label>
+          <input type="number" id="p-limit" placeholder="Ej: 600000" min="0" inputmode="numeric">
+          <div class="bar pers"><span id="p-bar"></span></div>
+          <div class="note" id="p-note">Define un límite y registra tus gastos del día a día.</div>
+          <div id="pers-list" style="margin-top:12px"></div>
+          <div class="row" style="margin-top:10px">
+            <div style="flex:1.3"><label>Nombre corto</label>
+            <input type="text" id="p-name" placeholder="Ej: Café, Cine"></div>
+            <div><label>Valor</label>
+            <input type="number" id="p-amt" placeholder="0" min="0" inputmode="numeric"></div>
+          </div>
+          <button class="btn pers" id="p-add">＋ Agregar gasto personal</button>
         </div>
-        <div class="note" id="pie-note" style="text-align:center"></div>
-      </div>
 
-      <div style="grid-column:1/-1;text-align:center;margin-top:4px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
-        <button class="mini" id="delmonth" style="background:#fdeeee;color:#c0616a">🗑️ Borrar este mes</button>
+        <div class="card aho">
+          <h2>🐷 Ahorro</h2>
+          <label>¿Cuánto destinas a ahorro este mes?</label>
+          <input type="number" id="ahorro" placeholder="Ej: 400000" min="0" inputmode="numeric">
+          <div class="reco" id="aho-reco">💡 Recomendado (20% de tus ingresos): $0</div>
+          <div class="note" id="aho-note"></div>
+        </div>
+
+        <div class="card deuda">
+          <h2>💳 Deuda</h2>
+          <label>Total que debes en tarjetas de crédito</label>
+          <input type="number" id="deuda" placeholder="Ej: 1200000" min="0" inputmode="numeric">
+          <div class="note" id="deuda-note"></div>
+        </div>
+
+        <div class="card pie-card">
+          <h2>📊 Distribución de tus ingresos (100%)</h2>
+          <div class="pie-wrap">
+            <svg id="pie" width="240" height="240" viewBox="0 0 240 240"></svg>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div class="note" id="pie-note" style="text-align:center"></div>
+        </div>
+
+        <div style="grid-column:1/-1;text-align:center;margin-top:4px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
+          <button class="mini" id="delmonth" style="background:#fdeeee;color:#c0616a">🗑️ Borrar este mes</button>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ INVERSIONES ============ -->
+  <div id="view-inv" style="display:none">
+    <div class="card inv">
+      <h2>📈 Calculadora de inversión</h2>
+      <label>Nombre (opcional)</label>
+      <input type="text" id="inv-name" placeholder="Ej: CDT Banco, Fondo de inversión">
+      <div class="row" style="margin-top:10px">
+        <div><label>Valor a invertir</label><input type="number" id="inv-amt" placeholder="Ej: 1000000" min="0" inputmode="numeric"></div>
+        <div><label>% Interés E.A.</label><input type="number" id="inv-ea" placeholder="Ej: 12" min="0" step="0.01" inputmode="decimal"></div>
+        <div><label>Plazo (meses)</label><input type="number" id="inv-months" placeholder="Ej: 12" min="1" inputmode="numeric"></div>
+      </div>
+      <div class="inv-result" id="inv-result"></div>
+      <button class="btn inv" id="inv-add">➕ Agregar a mis finanzas</button>
+      <div class="note" style="margin-top:10px">Al agregarla, su rendimiento se suma automáticamente cada mes en tus finanzas, desde el mes que tengas abierto.</div>
+    </div>
+
+    <div class="card">
+      <h2>💼 Mis inversiones activas</h2>
+      <div id="inv-list"></div>
     </div>
   </div>
 </div>
 
-<!-- Firebase (compat) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
 /* ============================================================
-   👉 PEGA AQUÍ TU CONFIG DE FIREBASE (ver README).
-   Mientras tenga "PEGA_...", la app funciona en modo local.
+   👉 CONFIG DE FIREBASE
    ============================================================ */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCUb_OBbs-8YST9n0WsGIn85rQrdCuZQm0",
@@ -234,15 +284,40 @@ const $=id=>document.getElementById(id);
 const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CO');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-let DB={months:{},fixedTemplate:[]};
+let DB={months:{},fixedTemplate:[],investments:[]};
 let viewKey=todayKey();
-let cloud=false, uid=null, applyingRemote=false, signupMode=false;
+let cloud=false, uid=null, applyingRemote=false, signupMode=false, currentView='fin';
 
 function todayKey(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
 function keyTitle(k){const[y,m]=k.split('-');return MONTHS[(+m)-1]+' '+y;}
 function shiftKey(k,d){let[y,m]=k.split('-').map(Number);m+=d;while(m<1){m+=12;y--;}while(m>12){m-=12;y++;}return y+'-'+String(m).padStart(2,'0');}
+function monthsBetween(a,b){const[ya,ma]=a.split('-').map(Number),[yb,mb]=b.split('-').map(Number);return (yb-ya)*12+(mb-ma);}
+
+/* ---- inversiones (cálculo) ---- */
+function invMonthlyRate(ea){return Math.pow(1+ea/100,1/12)-1;}
+function invIncomeFor(key){
+  let total=0;
+  (DB.investments||[]).forEach(inv=>{
+    const t=monthsBetween(inv.start,key);
+    if(t>=0 && t<inv.months){
+      const im=invMonthlyRate(inv.ea);
+      total += inv.principal*Math.pow(1+im,t)*im;
+    }
+  });
+  return total;
+}
+
 function blankMonth(){return{incomes:[],hogar:DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false})),pLimit:0,pers:[],ahorro:0,deuda:0};}
-function ensureMonth(k){if(!DB.months[k])DB.months[k]=blankMonth();return DB.months[k];}
+function libreOf(key){const s=DB.months[key];if(!s)return 0;const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0)+invIncomeFor(key);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const per=(s.pers||[]).reduce((a,x)=>a+x.amt,0);return inc-(hog+per+(s.ahorro||0)+(s.deuda||0));}
+function ensureMonth(k){
+  if(!DB.months[k]){
+    const m=blankMonth();
+    const pk=shiftKey(k,-1);
+    if(DB.months[pk]){const lib=libreOf(pk);if(lib>0)m.incomes.push({name:'Sobrante mes anterior',amt:Math.round(lib)});}
+    DB.months[k]=m;
+  }
+  return DB.months[k];
+}
 const M=()=>ensureMonth(viewKey);
 
 function normMonth(m){
@@ -253,50 +328,45 @@ function normMonth(m){
   return m;
 }
 function normDB(){
-  if(!DB||typeof DB!=='object')DB={months:{},fixedTemplate:[]};
-  DB.months=DB.months||{};DB.fixedTemplate=DB.fixedTemplate||[];
+  if(!DB||typeof DB!=='object')DB={months:{},fixedTemplate:[],investments:[]};
+  DB.months=DB.months||{};DB.fixedTemplate=DB.fixedTemplate||[];DB.investments=DB.investments||[];
   for(const k in DB.months)DB.months[k]=normMonth(DB.months[k]);
 }
 
-/* ---- storage local + migración ---- */
+/* ---- storage + migración ---- */
 function loadLocal(){
   try{
     const v3=localStorage.getItem('finanzasV3');
     if(v3){DB=JSON.parse(v3);}
-    else{
-      const v2=localStorage.getItem('finanzasV2');
-      if(v2){DB=migrateV2(JSON.parse(v2));}
-    }
-  }catch(e){DB={months:{},fixedTemplate:[]};}
+    else{const v2=localStorage.getItem('finanzasV2');if(v2){DB=migrateV2(JSON.parse(v2));}}
+  }catch(e){DB={months:{},fixedTemplate:[],investments:[]};}
   normDB();
   viewKey=localStorage.getItem('viewKeyV3')||todayKey();
   ensureMonth(viewKey);
 }
 function migrateV2(old){
   const months={};
-  for(const y in (old.archive||{}))for(const mn in old.archive[y]){
-    const idx=MONTHS.indexOf(mn);if(idx<0)continue;
-    months[y+'-'+String(idx+1).padStart(2,'0')]=normMonth(old.archive[y][mn]);
-  }
+  for(const y in (old.archive||{}))for(const mn in old.archive[y]){const idx=MONTHS.indexOf(mn);if(idx<0)continue;months[y+'-'+String(idx+1).padStart(2,'0')]=normMonth(old.archive[y][mn]);}
   if(old.current)months[todayKey()]=normMonth(old.current);
-  return {months,fixedTemplate:old.fixedTemplate||[]};
+  return {months,fixedTemplate:old.fixedTemplate||[],investments:[]};
 }
 function persist(){
   try{localStorage.setItem('finanzasV3',JSON.stringify(DB));localStorage.setItem('viewKeyV3',viewKey);}catch(e){}
   if(cloud&&uid&&!applyingRemote){firebase.database().ref('users/'+uid).set(DB).catch(()=>{});}
 }
 
-/* ---- cálculos ---- */
-const incomeTotal=()=>M().incomes.reduce((s,x)=>s+x.amt,0);
+/* ---- cálculos mes ---- */
+const incomeStored=()=>M().incomes.reduce((s,x)=>s+x.amt,0);
+const incomeTotal=()=>incomeStored()+invIncomeFor(viewKey);
 const hogarTotal=()=>M().hogar.reduce((s,x)=>s+x.amt,0);
 const hogarPaid=()=>M().hogar.filter(x=>x.paid).reduce((s,x)=>s+x.amt,0);
 const persSpent=()=>M().pers.reduce((s,x)=>s+x.amt,0);
 const syncTemplate=()=>{DB.fixedTemplate=M().hogar.map(x=>({name:x.name,amt:x.amt}));};
 
-/* ---- render ---- */
-function renderAll(){$('mtitle').textContent=keyTitle(viewKey);render();}
+/* ---- render finanzas ---- */
+function renderAll(){$('mtitle').textContent=keyTitle(viewKey);render();renderInvList();}
 function render(){
-  const c=M(), income=incomeTotal();
+  const c=M(), invInc=invIncomeFor(viewKey), income=incomeStored()+invInc;
   const allocated=hogarTotal()+persSpent()+c.ahorro+c.deuda;
   const libre=income-allocated;
   $('s-ing').textContent=fmt(income);
@@ -307,15 +377,15 @@ function render(){
 
   // ingresos
   const il=$('ing-list');
-  il.innerHTML=c.incomes.length?c.incomes.map((x,i)=>
-    `<div class="item ing-i"><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-idel="${i}">✕</button></div>`).join('')
-    :'<div class="empty">Agrega tus fuentes de ingreso 🌼</div>';
+  let ih=(!c.incomes.length&&invInc<=0)?'<div class="empty">Agrega tus fuentes de ingreso 🌼</div>':'';
+  ih+=c.incomes.map((x,i)=>`<div class="item ing-i"><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-idel="${i}">✕</button></div>`).join('');
+  if(invInc>0)ih+=`<div class="item auto"><span class="nm">📈 Rendimiento inversiones <small style="color:#8a7a9a;font-weight:600">(automático)</small></span><span class="amt" style="color:var(--verde)">${fmt(invInc)}</span></div>`;
+  il.innerHTML=ih;
   il.querySelectorAll('[data-idel]').forEach(b=>b.onclick=()=>{c.incomes.splice(+b.dataset.idel,1);persist();render();});
 
   // hogar
   const hl=$('hogar-list');
-  hl.innerHTML=c.hogar.map((x,i)=>
-    `<div class="item ${x.paid?'paid':''}" data-i="${i}"><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-del="${i}">✕</button></div>`).join('');
+  hl.innerHTML=c.hogar.map((x,i)=>`<div class="item ${x.paid?'paid':''}" data-i="${i}"><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-del="${i}">✕</button></div>`).join('');
   hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.del!==undefined)return;c.hogar[+el.dataset.i].paid=!c.hogar[+el.dataset.i].paid;persist();render();});
   hl.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.hogar.splice(+b.dataset.del,1);syncTemplate();persist();render();});
   const pend=hogarTotal()-hogarPaid(), nPend=c.hogar.filter(x=>!x.paid).length;
@@ -326,8 +396,7 @@ function render(){
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
   $('p-bar').style.background=freeP<0?'linear-gradient(90deg,#d96a72,#f0a07e)':'';
   const pl=$('pers-list');
-  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>
-    `<div class="item pers-i"><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
   pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);persist();render();});
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
 
@@ -337,9 +406,7 @@ function render(){
   $('aho-note').innerHTML=income>0&&c.ahorro>0?(c.ahorro>=reco?`✅ Vas <b>${Math.round(c.ahorro/income*100)}%</b>, ¡por encima del 20%! 🌱`:`Vas en <b>${Math.round(c.ahorro/income*100)}%</b>. Te faltan <b>${fmt(reco-c.ahorro)}</b> para el 20%.`):'';
   $('deuda-note').innerHTML=c.deuda>0?`Saldo pendiente en tarjetas: <b style="color:var(--rojo)">${fmt(c.deuda)}</b>`:'';
 
-  // inputs
   $('p-limit').value=c.pLimit||'';$('ahorro').value=c.ahorro||'';$('deuda').value=c.deuda||'';
-
   drawPie(c,income,libre);
 }
 
@@ -348,19 +415,11 @@ function polar(cx,cy,r,deg){const a=(deg-90)*Math.PI/180;return[cx+r*Math.cos(a)
 function slicePath(cx,cy,r,a0,a1){const[x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(cx,cy,r,a1);const big=(a1-a0)>180?1:0;return`M${cx},${cy} L${x0},${y0} A${r},${r} 0 ${big} 1 ${x1},${y1} Z`;}
 function drawPie(c,income,libre){
   const svg=$('pie'),leg=$('legend'),cx=120,cy=120,r=95;
-  const segs=[
-    {k:'hogar',lab:'Hogar',v:hogarTotal()},
-    {k:'pers',lab:'Personales',v:persSpent()},
-    {k:'aho',lab:'Ahorro',v:c.ahorro},
-    {k:'deuda',lab:'Deuda',v:c.deuda},
-  ].filter(s=>s.v>0);
+  const segs=[{k:'hogar',lab:'Hogar',v:hogarTotal()},{k:'pers',lab:'Personales',v:persSpent()},{k:'aho',lab:'Ahorro',v:c.ahorro},{k:'deuda',lab:'Deuda',v:c.deuda}].filter(s=>s.v>0);
   if(libre>0)segs.push({k:'libre',lab:'Libre',v:libre});
   const totalSeg=segs.reduce((s,x)=>s+x.v,0);
   svg.innerHTML='';leg.innerHTML='';
-  if(totalSeg<=0){
-    svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#f4eef9"/><text x="${cx}" y="${cy}" text-anchor="middle" dy=".3em" fill="#b3a6c4" font-size="13">Sin datos aún</text>`;
-    leg.innerHTML='<div style="color:#9b9bae">Ingresa tus valores 🍃</div>';$('pie-note').textContent='';return;
-  }
+  if(totalSeg<=0){svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#f4eef9"/><text x="${cx}" y="${cy}" text-anchor="middle" dy=".3em" fill="#b3a6c4" font-size="13">Sin datos aún</text>`;leg.innerHTML='<div style="color:#9b9bae">Ingresa tus valores 🍃</div>';$('pie-note').textContent='';return;}
   const denom=income>0?income:totalSeg;let ang=0;
   segs.forEach(s=>{
     const frac=s.v/totalSeg,a1=ang+frac*360,mid=ang+frac*180;
@@ -377,6 +436,57 @@ function drawPie(c,income,libre){
   $('pie-note').innerHTML=libre<0?`⚠️ Tus gastos superan tus ingresos por <b style="color:var(--rojo)">${fmt(-libre)}</b>.`:'';
 }
 
+/* ---- inversiones (UI) ---- */
+function invParams(){return {P:+$('inv-amt').value||0, ea:+$('inv-ea').value||0, n:Math.max(0,Math.floor(+$('inv-months').value||0))};}
+function renderInvCalc(){
+  const {P,ea,n}=invParams(), box=$('inv-result');
+  if(P<=0||ea<=0||n<=0){box.innerHTML='<div style="color:#8aa">Ingresa valor, % E.A. y plazo para ver la proyección 🌱</div>';return;}
+  const im=invMonthlyRate(ea), FV=P*Math.pow(1+im,n), gain=FV-P;
+  let rows='',bal=P;
+  for(let t=0;t<n;t++){const interes=bal*im;bal+=interes;rows+=`<tr><td>Mes ${t+1}</td><td>${fmt(interes)}</td><td>${fmt(bal)}</td></tr>`;}
+  box.innerHTML=`<div style="font-size:.85rem;color:#6a8a95">Tasa mensual equivalente: <b>${(im*100).toFixed(3)}%</b></div>
+    <div style="margin-top:8px;font-size:.85rem">Ganancia total en ${n} ${n==1?'mes':'meses'}:</div>
+    <div class="inv-big">${fmt(gain)}</div>
+    <div style="font-size:.85rem">Valor final: <b>${fmt(FV)}</b> (invertiste ${fmt(P)})</div>
+    <div class="inv-scroll"><table class="inv-tbl"><thead><tr><th>Mes</th><th>Interés</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function renderInvList(){
+  const box=$('inv-list');if(!box)return;
+  if(!DB.investments.length){box.innerHTML='<div class="empty">Aún no has agregado inversiones 🍃</div>';return;}
+  box.innerHTML=DB.investments.map(inv=>{
+    const im=invMonthlyRate(inv.ea), FV=inv.principal*Math.pow(1+im,inv.months), gain=FV-inv.principal;
+    const endKey=shiftKey(inv.start,inv.months-1);
+    const done=Math.min(inv.months,Math.max(0,monthsBetween(inv.start,viewKey)+1));
+    const activa=monthsBetween(inv.start,viewKey)>=0 && monthsBetween(inv.start,viewKey)<inv.months;
+    return `<div class="item inv-i" style="align-items:flex-start">
+      <span class="nm">💼 ${esc(inv.name)}<br><small style="color:#6a8a95;font-weight:600">${fmt(inv.principal)} · ${inv.ea}% E.A. · ${inv.months} meses<br>${keyTitle(inv.start)} → ${keyTitle(endKey)} · ${activa?('mes '+done+' de '+inv.months):'finalizada'}</small></span>
+      <span class="amt" style="color:var(--verde)">+${fmt(gain)}</span>
+      <button class="del" data-invdel="${inv.id}">✕</button></div>`;
+  }).join('');
+  box.querySelectorAll('[data-invdel]').forEach(b=>b.onclick=()=>{if(confirm('¿Quitar esta inversión? Dejará de sumar rendimiento en tus finanzas.')){DB.investments=DB.investments.filter(i=>String(i.id)!==String(b.dataset.invdel));persist();renderInvList();render();}});
+}
+['inv-amt','inv-ea','inv-months'].forEach(id=>$(id).oninput=renderInvCalc);
+$('inv-add').onclick=()=>{
+  const {P,ea,n}=invParams();
+  if(P<=0||ea<=0||n<=0){alert('Completa valor, % E.A. y plazo 🌷');return;}
+  DB.investments.push({id:Date.now(),name:$('inv-name').value.trim()||'Inversión',principal:P,ea,months:n,start:viewKey});
+  $('inv-name').value='';$('inv-amt').value='';$('inv-ea').value='';$('inv-months').value='';
+  renderInvCalc();renderInvList();persist();render();
+  alert('✅ Inversión agregada. Su rendimiento se sumará mes a mes en tus finanzas, desde '+keyTitle(viewKey)+'.');
+};
+
+/* ---- pestañas ---- */
+function showView(v){
+  currentView=v;
+  $('view-fin').style.display=v==='fin'?'':'none';
+  $('view-inv').style.display=v==='inv'?'':'none';
+  $('tab-fin').classList.toggle('active',v==='fin');
+  $('tab-inv').classList.toggle('active',v==='inv');
+  if(v==='inv'){renderInvCalc();renderInvList();}
+}
+$('tab-fin').onclick=()=>showView('fin');
+$('tab-inv').onclick=()=>showView('inv');
+
 /* ---- navegación meses ---- */
 function goTo(k,dir){
   viewKey=k;ensureMonth(k);persist();
@@ -385,20 +495,11 @@ function goTo(k,dir){
 }
 $('prevM').onclick=()=>goTo(shiftKey(viewKey,-1),'prev');
 $('nextM').onclick=()=>goTo(shiftKey(viewKey,1),'next');
-// swipe
-let tsx=null,tsy=null;
-const appEl=$('app');
+let tsx=null,tsy=null;const appEl=$('app');
 appEl.addEventListener('touchstart',e=>{tsx=e.changedTouches[0].clientX;tsy=e.changedTouches[0].clientY;},{passive:true});
-appEl.addEventListener('touchend',e=>{
-  if(tsx===null)return;
-  const dx=e.changedTouches[0].clientX-tsx, dy=e.changedTouches[0].clientY-tsy;
-  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5){
-    if(dx<0)goTo(shiftKey(viewKey,1),'next'); else goTo(shiftKey(viewKey,-1),'prev');
-  }
-  tsx=null;
-},{passive:true});
+appEl.addEventListener('touchend',e=>{if(tsx===null)return;const dx=e.changedTouches[0].clientX-tsx,dy=e.changedTouches[0].clientY-tsy;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx<0)goTo(shiftKey(viewKey,1),'next');else goTo(shiftKey(viewKey,-1),'prev');}tsx=null;},{passive:true});
 
-/* ---- inputs ---- */
+/* ---- inputs finanzas ---- */
 $('p-limit').oninput=e=>{M().pLimit=+e.target.value||0;persist();render();};
 $('ahorro').oninput=e=>{M().ahorro=+e.target.value||0;persist();render();};
 $('deuda').oninput=e=>{M().deuda=+e.target.value||0;persist();render();};
@@ -411,14 +512,15 @@ $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
 $('delmonth').onclick=()=>{if(confirm('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();}};
 
 /* ---- exportar ---- */
-function monthToText(s){const L=[];const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const libre=inc-(hog+perGas+(s.ahorro||0)+(s.deuda||0));
-  L.push('  INGRESOS: '+fmt(inc));(s.incomes||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
+function monthToText(s,key){const L=[];const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0)+invIncomeFor(key);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const libre=inc-(hog+perGas+(s.ahorro||0)+(s.deuda||0));
+  L.push('  INGRESOS: '+fmt(inc));(s.incomes||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));const ii=invIncomeFor(key);if(ii>0)L.push('    - Rendimiento inversiones (auto): '+fmt(ii));
   L.push('  HOGAR (fijos): '+fmt(hog)+'  | Pagado: '+fmt(hogPag)+'  | Pendiente: '+fmt(hog-hogPag));(s.hogar||[]).forEach(x=>L.push('    - ['+(x.paid?'PAGADO':'PENDIENTE')+'] '+x.name+': '+fmt(x.amt)));
-  L.push('  PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas)+'  | Libre del limite: '+fmt((s.pLimit||0)-perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
+  L.push('  PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
   L.push('  AHORRO: '+fmt(s.ahorro||0)+'   (recomendado 20%: '+fmt(inc*0.2)+')');L.push('  DEUDA tarjetas: '+fmt(s.deuda||0));L.push('  >> LIBRE DEL MES: '+fmt(libre));return L.join('\n');}
 $('export').onclick=()=>{
   const now=new Date();let t='===== MIS FINANZAS =====\nExportado: '+now.toLocaleDateString('es-CO')+' '+now.toLocaleTimeString('es-CO')+'\n';
-  Object.keys(DB.months).sort().reverse().forEach(k=>{t+='\n['+keyTitle(k)+']\n'+monthToText(DB.months[k])+'\n';});
+  Object.keys(DB.months).sort().reverse().forEach(k=>{t+='\n['+keyTitle(k)+']\n'+monthToText(DB.months[k],k)+'\n';});
+  if(DB.investments.length){t+='\n===== INVERSIONES =====\n';DB.investments.forEach(inv=>{const im=invMonthlyRate(inv.ea),FV=inv.principal*Math.pow(1+im,inv.months);t+='- '+inv.name+': '+fmt(inv.principal)+' al '+inv.ea+'% E.A. x '+inv.months+' meses (desde '+keyTitle(inv.start)+') -> ganancia '+fmt(FV-inv.principal)+'\n';});}
   t+='\n----- RESPALDO -----\nDATA:'+JSON.stringify(DB);
   const blob=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mis-finanzas-'+now.toISOString().slice(0,10)+'.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
 };
@@ -441,11 +543,8 @@ if(configured&&window.firebase){
         if(v){applyingRemote=true;DB=v;normDB();ensureMonth(viewKey);renderAll();applyingRemote=false;}
         else{firebase.database().ref('users/'+uid).set(DB).catch(()=>{});}
       });
-    }else{
-      $('gate').style.display='flex';$('root').style.display='none';
-    }
+    }else{$('gate').style.display='flex';$('root').style.display='none';}
   });
-  // auth UI
   function toggleMode(){
     signupMode=!signupMode;
     $('gate-sub').textContent=signupMode?'Crea tu cuenta para empezar a sincronizar':'Inicia sesión para ver tus datos en todos tus dispositivos';
@@ -463,17 +562,19 @@ if(configured&&window.firebase){
   };
   $('logout').onclick=()=>auth.signOut();
 }else{
-  // modo local
-  $('local-banner').style.display='';
-  startApp();
+  $('local-banner').style.display='';startApp();
 }
 function setMsg(t,cls){const m=$('au-msg');m.textContent=t;m.className='msg '+(cls||'');}
+
+/* ---- PWA: registrar service worker ---- */
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
 function authErr(e){const c=(e&&e.code)||'';
   if(c.includes('invalid-email'))return'El correo no es válido.';
   if(c.includes('missing-password')||c.includes('weak-password'))return'La contraseña debe tener al menos 6 caracteres.';
   if(c.includes('email-already-in-use'))return'Ese correo ya tiene cuenta. Inicia sesión.';
   if(c.includes('wrong-password')||c.includes('invalid-credential'))return'Correo o contraseña incorrectos.';
   if(c.includes('user-not-found'))return'No existe una cuenta con ese correo. Créala.';
+  if(c.includes('operation-not-allowed'))return'Activa Correo/Contraseña en Firebase (Authentication).';
   if(c.includes('network'))return'Sin conexión. Revisa tu internet.';
   return'No se pudo: '+(e.message||c);}
 </script>
