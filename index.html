@@ -214,8 +214,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
-// Your web app's Firebase configuration
-const firebaseConfig = {
+/* ============================================================
+   👉 PEGA AQUÍ TU CONFIG DE FIREBASE (ver README).
+   Mientras tenga "PEGA_...", la app funciona en modo local.
+   ============================================================ */
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCUb_OBbs-8YST9n0WsGIn85rQrdCuZQm0",
   authDomain: "mis-finanzas-347f1.firebaseapp.com",
   databaseURL: "https://mis-finanzas-347f1-default-rtdb.firebaseio.com",
@@ -224,9 +227,6 @@ const firebaseConfig = {
   messagingSenderId: "9482169301",
   appId: "1:9482169301:web:b92eeee12f1e3cca6cab5c"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const COL={hogar:'#e89cb6',pers:'#b39ddb',aho:'#8fcdb4',deuda:'#f0a07e',libre:'#d8cfe0'};
