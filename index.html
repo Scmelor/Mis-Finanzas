@@ -66,9 +66,8 @@
   body{background:var(--bg-grad);color:var(--text);min-height:100vh;padding:18px 14px 40px;transition:background .3s}
   .wrap{max-width:1000px;margin:0 auto}
   h1{font-size:1.7rem;font-weight:700;color:var(--title);text-align:center;margin-bottom:10px}
-  .themebar{display:flex;gap:8px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
-  .thm{padding:8px 15px;border-radius:20px;background:var(--card);color:var(--soft);font-weight:700;font-size:.82rem;box-shadow:var(--shadow);border:none;cursor:pointer}
-  .thm.active{background:linear-gradient(135deg,var(--pers),var(--hogar));color:#fff}
+  .topright{display:flex;gap:10px;align-items:center}
+  .theme-sel{width:auto;font-size:.78rem;font-weight:700;padding:6px 26px 6px 10px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);color:var(--soft)}
   .tabs{display:flex;gap:8px;background:var(--card);border-radius:16px;padding:6px;box-shadow:var(--shadow);margin-bottom:12px}
   .tab{flex:1;padding:12px;border-radius:12px;background:transparent;color:var(--soft);font-weight:700;font-size:.95rem;border:none;cursor:pointer}
   .tab.active{background:linear-gradient(135deg,var(--pers),var(--hogar));color:#fff}
@@ -172,15 +171,16 @@
 <div class="wrap" id="root" style="display:none">
   <div class="topbar">
     <span class="who" id="who"></span>
-    <button class="linkbtn" id="logout" style="display:none">Cerrar sesión</button>
+    <span class="topright">
+      <select id="theme-sel" class="theme-sel" title="Tema">
+        <option value="pastel">Pastel</option>
+        <option value="neutro">Neutro</option>
+        <option value="masculino">Oscuro</option>
+      </select>
+      <button class="linkbtn" id="logout" style="display:none">Cerrar sesión</button>
+    </span>
   </div>
   <h1>🌸 Mis Finanzas</h1>
-
-  <div class="themebar">
-    <button class="thm active" data-theme="pastel">🌸 Pastel</button>
-    <button class="thm" data-theme="neutro">🪵 Neutro</button>
-    <button class="thm" data-theme="masculino">🌊 Masculino</button>
-  </div>
 
   <div class="banner" id="local-banner" style="display:none">Modo local (solo este dispositivo). Configura Firebase para sincronizar.</div>
 
@@ -274,9 +274,12 @@
           <div class="note" id="pie-note" style="text-align:center"></div>
         </div>
 
-        <div style="grid-column:1/-1;text-align:center;margin-top:4px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
-          <button class="mini" id="delmonth" style="background:var(--deuda-bg);color:var(--rojo)">🗑️ Borrar este mes</button>
+        <div style="grid-column:1/-1;margin-top:4px">
+          <button class="btn" id="closemonth" style="background:linear-gradient(135deg,var(--aho),var(--pers))">📅 Cerrar mes y pasar saldo al siguiente</button>
+          <div style="text-align:center;margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
+            <button class="mini" id="delmonth" style="background:var(--deuda-bg);color:var(--rojo)">🗑️ Borrar este mes</button>
+          </div>
         </div>
       </div>
     </div>
@@ -342,10 +345,11 @@ function applyTheme(t){
   else if(t==='masculino')document.body.classList.add('theme-masculino');
   try{localStorage.setItem('theme',t);}catch(e){}
   document.querySelectorAll('.thm').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));
+  const sel=$('theme-sel');if(sel)sel.value=t;
   const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',cssVar('--card')||'#e7ddf7');
   if($('root')&&$('root').style.display!=='none'&&$('pie'))renderAll();
 }
-document.querySelectorAll('.thm').forEach(b=>b.onclick=()=>applyTheme(b.dataset.theme));
+$('theme-sel').onchange=e=>applyTheme(e.target.value);
 
 /* ---- inversiones (cálculo) ---- */
 function invMonthlyRate(ea){return Math.pow(1+ea/100,1/12)-1;}
@@ -557,6 +561,16 @@ $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
 $('delmonth').onclick=()=>{if(confirm('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();}};
+$('closemonth').onclick=()=>{
+  const lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
+  if(!confirm('¿Cerrar '+keyTitle(viewKey)+'?\n\nTu saldo libre ('+fmt(lib)+') pasará como ingreso a '+keyTitle(nk)+', y tus gastos fijos se copiarán a ese mes.'))return;
+  const nm=ensureMonth(nk);
+  if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
+  nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
+  if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
+  goTo(nk,'next');
+  alert('✅ Pasaste a '+keyTitle(nk)+'. Se agregó tu saldo libre y tus gastos fijos.');
+};
 
 /* ---- exportar ---- */
 function monthToText(s,key){const L=[];const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0)+invIncomeFor(key);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const libre=inc-(hog+perGas+(s.ahorro||0)+(s.deuda||0));
