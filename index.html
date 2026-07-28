@@ -369,21 +369,22 @@
     </div>
   </div>
 
-  <!-- ============ CALCULADORA DE DEUDAS ============ -->
+  <!-- ============ COMPARADOR DE DEUDAS ============ -->
   <div id="view-dcalc" style="display:none">
     <div class="card deuda">
-      <h2>🧮 Calculadora de deudas</h2>
-      <label>Banco / tarjeta</label>
-      <input type="text" id="dc-bank" placeholder="Ej: Visa Bancolombia">
-      <label style="margin-top:10px">Valor de la deuda</label>
-      <input type="number" id="dc-amt" placeholder="Ej: 1000000" min="0" inputmode="numeric">
-      <div class="row" style="margin-top:10px">
-        <div><label>% Interés E.A.</label><input type="number" id="dc-ea" placeholder="Ej: 28" min="0" step="0.01" inputmode="decimal"></div>
-        <div><label>% Interés E.M.</label><input type="number" id="dc-em" placeholder="Ej: 2.08" min="0" step="0.01" inputmode="decimal"></div>
+      <h2>🧮 Comparar deudas entre bancos</h2>
+      <div class="row">
+        <div style="flex:1.4"><label>Banco</label><input type="text" id="dc-bank" placeholder="Ej: Bancolombia"></div>
+        <div><label>Valor</label><input type="number" id="dc-amt" placeholder="0" min="0" inputmode="numeric"></div>
       </div>
-      <div class="note" style="margin-top:6px">Escribe una de las dos tasas y la otra se calcula sola.</div>
-      <div class="inv-result" id="dc-result"></div>
-      <button class="btn deuda" id="dc-add">➕ Agregar a mis deudas</button>
+      <div class="row" style="margin-top:10px">
+        <div><label>Tasa %</label><input type="number" id="dc-rate" placeholder="Ej: 28" min="0" step="0.01" inputmode="decimal"></div>
+        <div style="flex:.8"><label>Tipo</label><select id="dc-type"><option value="ea">E.A.</option><option value="em">E.M.</option></select></div>
+        <div style="flex:.8"><label>Meses</label><input type="number" id="dc-months" placeholder="12" min="1" inputmode="numeric"></div>
+      </div>
+      <button class="btn deuda" id="dc-add-opt">➕ Agregar banco a la comparación</button>
+      <div class="note" style="margin-top:8px">Agrega dos o más bancos y te marco la opción más económica. Luego con “Elegir” la sumas a tus deudas.</div>
+      <div id="dc-table" style="margin-top:12px"></div>
     </div>
   </div>
 </div>
@@ -547,7 +548,8 @@ function render(){
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
   $('p-bar').style.background=freeP<0?'linear-gradient(90deg,var(--rojo),var(--deuda))':'';
   const pl=$('pers-list');
-  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
+  pl.querySelectorAll('[data-pamt]').forEach(inp=>{inp.oninput=()=>{c.pers[+inp.dataset.pamt].amt=+inp.value||0;persist();renderTotals();};});
   pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);persist();render();});
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
 
@@ -555,7 +557,7 @@ function render(){
   $('aho-reco').innerHTML=`💡 Recomendado (20% de tus ingresos): <b>${fmt(reco)}</b>`;
   $('aho-note').innerHTML=income>0&&c.ahorro>0?(c.ahorro>=reco?`✅ Vas <b>${Math.round(c.ahorro/income*100)}%</b>, ¡por encima del 20%! 🌱`:`Vas en <b>${Math.round(c.ahorro/income*100)}%</b>. Te faltan <b>${fmt(reco-c.ahorro)}</b> para el 20%.`):'';
   const dl=$('deuda-list');
-  dl.innerHTML=c.debts.length?c.debts.map((d,i)=>`<div class="item debt ${d.paid?'paid':''}" data-di="${i}" style="background:var(--deuda-bg)"><span class="check">${d.paid?'✓':''}</span><span class="nm">💳 ${esc(d.bank)}${d.dueDay?` <small style="color:var(--soft);font-weight:600">· día ${d.dueDay}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-damt="${i}" value="${d.amt||''}" placeholder="valor"><button class="del" data-ddel="${i}">✕</button></div>`).join(''):'<div class="empty">Sin deudas registradas 🌿</div>';
+  dl.innerHTML=c.debts.length?c.debts.map((d,i)=>`<div class="item debt ${d.paid?'paid':''}" data-di="${i}" style="background:var(--deuda-bg)"><span class="check">${d.paid?'✓':''}</span><span class="nm">💳 ${esc(d.bank)}${d.dueDay?` <small style="color:var(--soft);font-weight:600">· vence ${d.dueDay} de ${MONTHS[(+viewKey.split('-')[1])-1]}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-damt="${i}" value="${d.amt||''}" placeholder="valor"><button class="del" data-ddel="${i}">✕</button></div>`).join(''):'<div class="empty">Sin deudas registradas 🌿</div>';
   dl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.ddel!==undefined||e.target.dataset.damt!==undefined)return;const i=+el.dataset.di;c.debts[i].paid=!c.debts[i].paid;persist();render();});
   dl.querySelectorAll('[data-damt]').forEach(inp=>inp.oninput=()=>{c.debts[+inp.dataset.damt].amt=+inp.value||0;persist();renderTotals();});
   dl.querySelectorAll('[data-ddel]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.debts.splice(+b.dataset.ddel,1);syncDebtTemplate();persist();render();});
@@ -574,6 +576,10 @@ function renderTotals(){
   const sl=$('s-libre');sl.textContent=fmt(libre);sl.className='val '+(libre>=0?'pos':'neg');
   const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length;
   $('deuda-note').innerHTML=c.debts.length?`Total: <b style="color:var(--rojo)">${fmt(deudaTotal())}</b> · Pagado <b style="color:var(--verde)">${fmt(dPaid)}</b> · Faltan <b>${dPend}</b> por pagar`:'';
+  const spent=persSpent(), freeP=c.pLimit-spent;
+  $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
+  $('p-bar').style.background=freeP<0?'linear-gradient(90deg,var(--rojo),var(--deuda))':'';
+  $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
   hogarNote();
   drawPie(c,income,libre);
 }
@@ -649,31 +655,37 @@ $('inv-add').onclick=()=>{
   alert('✅ Inversión agregada. Su rendimiento se sumará mes a mes en tus finanzas, desde '+keyTitle(viewKey)+'.');
 };
 
-/* ---- calculadora de deudas ---- */
-function dcEA2EM(ea){return (Math.pow(1+ea/100,1/12)-1)*100;}
-function dcEM2EA(em){return (Math.pow(1+em/100,12)-1)*100;}
-function renderDcalc(){
-  const P=+$('dc-amt').value||0, em=(+$('dc-em').value||0)/100, ea=+$('dc-ea').value||0, box=$('dc-result');
-  if(P<=0||em<=0){box.innerHTML='<div style="color:var(--muted)">Ingresa el valor y una tasa para ver el costo de la deuda 🌱</div>';return;}
-  const mInt=P*em, y=P*Math.pow(1+em,12), yInt=y-P;
-  let rows='',bal=P;
-  for(let t=0;t<12;t++){const iv=bal*em;bal+=iv;rows+=`<tr><td>Mes ${t+1}</td><td>${fmt(iv)}</td><td>${fmt(bal)}</td></tr>`;}
-  box.innerHTML=`<div style="font-size:.85rem;color:var(--soft)">Equivale a <b>${ea.toFixed(2)}% E.A.</b> / <b>${(em*100).toFixed(3)}% E.M.</b></div>
-    <div style="margin-top:8px;font-size:.85rem">Interés del primer mes si no abonas:</div>
-    <div class="inv-big" style="color:var(--rojo)">${fmt(mInt)}</div>
-    <div style="font-size:.85rem">En 12 meses sin abonar deberías <b>${fmt(y)}</b> (intereses ${fmt(yInt)}).</div>
-    <div class="inv-scroll"><table class="inv-tbl"><thead><tr><th>Mes</th><th>Interés</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-}
-$('dc-ea').oninput=()=>{if($('dc-ea').value!=='')$('dc-em').value=dcEA2EM(+$('dc-ea').value).toFixed(3);renderDcalc();};
-$('dc-em').oninput=()=>{if($('dc-em').value!=='')$('dc-ea').value=dcEM2EA(+$('dc-em').value).toFixed(2);renderDcalc();};
-$('dc-amt').oninput=renderDcalc;
-$('dc-add').onclick=()=>{
-  const bank=$('dc-bank').value.trim()||'Deuda', P=+$('dc-amt').value||0;
-  if(P<=0){alert('Ingresa el valor de la deuda 🌷');return;}
-  M().debts.push({bank,amt:P,dueDay:null,paid:false});
-  syncDebtTemplate();persist();render();showView('fin');
-  tip('dcadd','✅ Se agregó a tus deudas del mes. En 💳 Deuda ponle el día de pago para el recordatorio.');
+/* ---- comparador de deudas ---- */
+let dcOptions=[];
+$('dc-add-opt').onclick=()=>{
+  const bank=$('dc-bank').value.trim(), P=+$('dc-amt').value||0, rate=+$('dc-rate').value||0, type=$('dc-type').value, n=Math.floor(+$('dc-months').value||0);
+  if(!bank||P<=0||rate<=0||n<=0){alert('Completa banco, valor, tasa y meses 🌷');return;}
+  const im=type==='em'?rate/100:Math.pow(1+rate/100,1/12)-1;
+  dcOptions.push({bank,P,rate,type,n,im});
+  $('dc-bank').value='';$('dc-amt').value='';$('dc-rate').value='';$('dc-months').value='';
+  renderDcTable();$('dc-bank').focus();
+  tip('dcopt','🧮 Agrega otro banco para comparar. Te marco ✅ la opción más económica según la cuota y el interés total.');
 };
+function renderDcTable(){
+  const box=$('dc-table');
+  if(!dcOptions.length){box.innerHTML='<div class="empty">Agrega bancos arriba para compararlos 🌿</div>';return;}
+  const rows=dcOptions.map((o,i)=>{
+    const cuota=o.im>0?o.P*o.im/(1-Math.pow(1+o.im,-o.n)):o.P/o.n;
+    const total=cuota*o.n, interes=total-o.P;
+    return Object.assign({},o,{i,cuota,total,interes});
+  });
+  const best=rows.reduce((a,b)=>b.total<a.total?b:a, rows[0]);
+  box.innerHTML=`<div class="inv-scroll" style="max-height:none"><table class="inv-tbl">
+    <thead><tr><th>Banco</th><th>Cuota/mes</th><th>Total</th><th>Interés</th><th></th></tr></thead>
+    <tbody>${rows.map(r=>`<tr style="${r.i===best.i?'background:var(--aho-bg)':''}">
+      <td style="text-align:left">${esc(r.bank)}${r.i===best.i?' ✅':''}<br><small style="color:var(--soft)">${fmt(r.P)} · ${r.rate}% ${r.type.toUpperCase()} · ${r.n} meses</small></td>
+      <td>${fmt(r.cuota)}</td><td>${fmt(r.total)}</td><td style="color:var(--rojo)">${fmt(r.interes)}</td>
+      <td style="white-space:nowrap"><button class="mini" data-dcpick="${r.i}" style="padding:6px 9px">Elegir</button> <button class="del" data-dcdel="${r.i}">✕</button></td>
+    </tr>`).join('')}</tbody></table></div>
+    ${rows.length>1?`<div class="reco" style="margin-top:12px">✅ La mejor opción es <b>${esc(best.bank)}</b>: cuota de <b>${fmt(best.cuota)}</b>/mes y pagas <b>${fmt(best.total)}</b> en total (solo ${fmt(best.interes)} de interés).</div>`:''}`;
+  box.querySelectorAll('[data-dcdel]').forEach(b=>b.onclick=()=>{dcOptions.splice(+b.dataset.dcdel,1);renderDcTable();});
+  box.querySelectorAll('[data-dcpick]').forEach(b=>b.onclick=()=>{const o=dcOptions[+b.dataset.dcpick];M().debts.push({bank:o.bank,amt:o.P,dueDay:null,paid:false});syncDebtTemplate();persist();render();showView('fin');tip('dcpick','✅ Agregada a tus deudas del mes. Ponle el día de pago en 💳 Deuda para el recordatorio.');});
+}
 
 /* ---- pestañas ---- */
 function showView(v){
@@ -685,7 +697,7 @@ function showView(v){
   $('tab-inv').classList.toggle('active',v==='inv');
   $('tab-dcalc').classList.toggle('active',v==='dcalc');
   if(v==='inv'){renderInvCalc();renderInvList();}
-  if(v==='dcalc')renderDcalc();
+  if(v==='dcalc')renderDcTable();
 }
 $('tab-fin').onclick=()=>showView('fin');
 $('tab-inv').onclick=()=>{showView('inv');tip('tabinv','📈 Calcula cuánto ganarías invirtiendo y agrégalo a tus finanzas para que sume mes a mes.');};
