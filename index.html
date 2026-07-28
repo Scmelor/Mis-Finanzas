@@ -15,57 +15,62 @@
 <style>
   /* ===== TEMA PASTEL (por defecto) ===== */
   :root{
-    --text:#5b5b6b; --muted:#9b9bae; --title:#7a6a8a; --ink:#6a5a7a; --soft:#8a7a9a;
-    --card:#ffffff; --panel:#efe7f5; --field:#fdfbff; --border:#f0e8f5;
-    --bg-grad:linear-gradient(135deg,#fdf6fb 0%,#f3f0fc 50%,#eef6fb 100%);
-    --sum-grad:linear-gradient(135deg,#fce4ef,#e7ddf7);
-    --shadow:0 8px 24px rgba(180,150,200,.18);
-    --hogar:#e89cb6; --hogar-bg:#fdeef4;
-    --pers:#b39ddb; --pers-l:#e0d4f2; --pers-bg:#f4f0fb;
-    --aho:#8fcdb4; --aho-bg:#eef9f3;
-    --deuda:#f0a07e; --deuda-bg:#fdf0e9;
-    --ing:#e9c879; --ing-bg:#fdf7e6;
-    --inv:#7ec4d6; --inv-bg:#e9f6fa;
-    --libre:#d8cfe0;
-    --verde:#4fae82; --rojo:#d96a72;
+    --text:#464451; --muted:#8a8698; --title:#5a4c6e; --ink:#443a57; --soft:#6b6080;
+    --card:#ffffff; --panel:#eee5f6; --field:#fdfbff; --border:#e7dcf1;
+    --stat-bg:rgba(255,255,255,.52);
+    --bg-grad:linear-gradient(135deg,#fdf5fb 0%,#f1ecfb 50%,#e9f1fb 100%);
+    --sum-grad:linear-gradient(135deg,#f8d9e8,#e0d3f4);
+    --shadow:0 10px 26px rgba(150,120,180,.20);
+    --hogar:#e084a6; --hogar-bg:#fbe6ef;
+    --pers:#a98fd6; --pers-l:#ddd1f1; --pers-bg:#f1ecfb;
+    --aho:#6fc0a2; --aho-bg:#e6f6ef;
+    --deuda:#ec9270; --deuda-bg:#fceadf;
+    --ing:#e0b556; --ing-bg:#fbf3df;
+    --inv:#6dbccf; --inv-bg:#e4f4f9;
+    --libre:#cabfe0;
+    --verde:#3d9c6e; --rojo:#d16068;
   }
   /* ===== TEMA NEUTRO ===== */
   body.theme-neutro{
-    --text:#4b4b52; --muted:#9a9aa2; --title:#55555f; --ink:#3f3f47; --soft:#7d7d86;
-    --card:#ffffff; --panel:#eeecea; --field:#faf9f8; --border:#e6e3df;
-    --bg-grad:linear-gradient(135deg,#f6f5f3 0%,#eeedec 50%,#eaecec 100%);
-    --sum-grad:linear-gradient(135deg,#e9e6e2,#dfe3e4);
-    --shadow:0 8px 24px rgba(120,120,120,.15);
-    --hogar:#c98f86; --hogar-bg:#f3e9e7;
-    --pers:#8f9bb3; --pers-l:#dfe4ec; --pers-bg:#eceef2;
-    --aho:#8fae9b; --aho-bg:#e9f0ec;
-    --deuda:#c9a66b; --deuda-bg:#f3ecdd;
-    --ing:#b0a68f; --ing-bg:#efece5;
-    --inv:#8bb0b6; --inv-bg:#e8f0f1;
-    --libre:#c9c6cf;
-    --verde:#4f9a70; --rojo:#c76b6b;
+    --text:#43434c; --muted:#93939d; --title:#454551; --ink:#34343d; --soft:#6f6f7a;
+    --card:#ffffff; --panel:#ecebe8; --field:#faf9f7; --border:#e4e1dc;
+    --stat-bg:rgba(255,255,255,.6);
+    --bg-grad:linear-gradient(135deg,#f5f4f1 0%,#edece9 50%,#e7eaeb 100%);
+    --sum-grad:linear-gradient(135deg,#e7e3de,#dae0e2);
+    --shadow:0 10px 26px rgba(110,110,116,.17);
+    --hogar:#c4837a; --hogar-bg:#f2e7e4;
+    --pers:#8090ab; --pers-l:#dce2ea; --pers-bg:#eaedf1;
+    --aho:#7fa38d; --aho-bg:#e6eee9;
+    --deuda:#c29a58; --deuda-bg:#f1e9d7;
+    --ing:#a89d84; --ing-bg:#eeeae1;
+    --inv:#7ea9b0; --inv-bg:#e4eef0;
+    --libre:#c3c0ca;
+    --verde:#489068; --rojo:#c15f5f;
   }
   /* ===== TEMA MASCULINO (oscuro) ===== */
   body.theme-masculino{
-    --text:#c7cdd6; --muted:#8a93a1; --title:#e8edf3; --ink:#f2f5f8; --soft:#9aa4b2;
-    --card:#1e2530; --panel:#28303c; --field:#232b36; --border:#333c49;
-    --bg-grad:linear-gradient(135deg,#141a22 0%,#1b222c 50%,#161d26 100%);
-    --sum-grad:linear-gradient(135deg,#243244,#20313f);
-    --shadow:0 10px 26px rgba(0,0,0,.45);
-    --hogar:#6ea8e0; --hogar-bg:#22303f;
-    --pers:#7f8ce0; --pers-l:#3a3f5c; --pers-bg:#262a3c;
-    --aho:#4fbf98; --aho-bg:#1f3630;
-    --deuda:#e08a5f; --deuda-bg:#37281f;
-    --ing:#d9b45a; --ing-bg:#33301f;
-    --inv:#59b6c9; --inv-bg:#1f3339;
-    --libre:#4a5568;
-    --verde:#4fbf8b; --rojo:#e07a7a;
+    --text:#c9cfd8; --muted:#8f98a6; --title:#eef2f7; --ink:#f4f7fa; --soft:#9aa4b2;
+    --card:#212936; --panel:#2b3444; --field:#28313f; --border:#3a4552;
+    --stat-bg:rgba(255,255,255,.08);
+    --bg-grad:linear-gradient(135deg,#10151d 0%,#171e28 50%,#121820 100%);
+    --sum-grad:linear-gradient(135deg,#26374d,#213443);
+    --shadow:0 12px 28px rgba(0,0,0,.5);
+    --hogar:#72abe2; --hogar-bg:#23313f;
+    --pers:#8592e6; --pers-l:#3b4160; --pers-bg:#272c3e;
+    --aho:#54c49d; --aho-bg:#1f3833;
+    --deuda:#e69066; --deuda-bg:#392a20;
+    --ing:#dfba5f; --ing-bg:#353220;
+    --inv:#5fbdd0; --inv-bg:#1f363c;
+    --libre:#59647a;
+    --verde:#54c692; --rojo:#e58484;
   }
 
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
   body{background:var(--bg-grad);color:var(--text);min-height:100vh;padding:18px 14px 40px;transition:background .3s}
   .wrap{max-width:1000px;margin:0 auto}
-  h1{font-size:1.7rem;font-weight:700;color:var(--title);text-align:center;margin-bottom:10px}
+  h1{font-size:1.7rem;font-weight:800;color:var(--title);text-align:center;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .logo{height:1.5em;width:1.5em;border-radius:11px;box-shadow:0 3px 10px rgba(80,60,110,.22);flex-shrink:0}
+  .gate h2 .logo{height:1.4em;width:1.4em}
   .topright{display:flex;gap:10px;align-items:center}
   .theme-wrap{position:relative}
   .theme-btn{font-size:.78rem;font-weight:700;padding:7px 11px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);color:var(--soft);cursor:pointer}
@@ -80,7 +85,7 @@
   .to-bars{display:flex;gap:4px}
   .to-bars span{flex:1;height:12px;border-radius:4px}
   .tabs{display:flex;gap:8px;background:var(--card);border-radius:16px;padding:6px;box-shadow:var(--shadow);margin-bottom:12px}
-  .tab{flex:1;padding:12px;border-radius:12px;background:transparent;color:var(--soft);font-weight:700;font-size:.95rem;border:none;cursor:pointer}
+  .tab{flex:1;padding:11px 6px;border-radius:12px;background:transparent;color:var(--soft);font-weight:700;font-size:.84rem;border:none;cursor:pointer}
   .tab.active{background:linear-gradient(135deg,var(--pers),var(--hogar));color:#fff}
   .monthnav{display:flex;align-items:center;justify-content:center;gap:12px;background:var(--card);border-radius:20px;padding:10px 12px;box-shadow:var(--shadow);margin-bottom:6px}
   .monthnav button{background:linear-gradient(135deg,var(--pers),var(--hogar));color:#fff;width:44px;height:44px;border-radius:14px;font-size:1.3rem;border:none;cursor:pointer;flex-shrink:0;line-height:1}
@@ -112,10 +117,11 @@
   .btn.inv{background:linear-gradient(135deg,var(--inv),var(--aho))}
   .btn:active{transform:scale(.98)}
   .mini{padding:10px 14px;border-radius:11px;background:var(--panel);color:var(--title);font-size:.85rem}
-  .summary{grid-column:1/-1;background:var(--sum-grad);border-radius:22px;padding:20px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center}
+  .summary{grid-column:1/-1;background:var(--sum-grad);border-radius:24px;padding:18px;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;text-align:center;box-shadow:var(--shadow)}
   @media(max-width:620px){.summary{grid-template-columns:1fr 1fr 1fr}}
   @media(max-width:380px){.summary{grid-template-columns:1fr 1fr}}
-  .stat .lab{font-size:.72rem;color:var(--soft);font-weight:600;margin-bottom:3px}
+  .stat{background:var(--stat-bg);border-radius:15px;padding:12px 6px;backdrop-filter:blur(2px)}
+  .stat .lab{font-size:.72rem;color:var(--soft);font-weight:700;margin-bottom:3px}
   .stat .val{font-size:1.1rem;font-weight:800;color:var(--ink);word-break:break-word}
   .stat .val.pos{color:var(--verde)}.stat .val.neg{color:var(--rojo)}
   .item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;margin-bottom:7px;background:var(--hogar-bg);cursor:pointer;transition:.15s;user-select:none;color:var(--text)}
@@ -140,7 +146,8 @@
   .bar>span{display:block;height:100%;border-radius:11px;transition:.5s;width:0}
   .bar.pers>span{background:linear-gradient(90deg,var(--pers),var(--pers-l))}
   .pie-card{grid-column:1/-1}
-  .pie-wrap{display:flex;align-items:center;gap:18px;justify-content:center;flex-wrap:wrap}
+  .pie-wrap{display:flex;align-items:center;gap:22px;justify-content:center;flex-wrap:wrap;padding:6px 0}
+  #pie{filter:drop-shadow(0 10px 20px rgba(90,70,120,.22))}
   .legend{display:flex;flex-direction:column;gap:9px;font-size:.86rem;min-width:200px;color:var(--text)}
   .legend div{display:flex;align-items:center;gap:9px}
   .legend .sw{width:14px;height:14px;border-radius:4px;flex-shrink:0}
@@ -158,7 +165,7 @@
   .inv-tbl thead th{position:sticky;top:0;background:var(--panel);color:var(--soft)}
   .gate{position:fixed;inset:0;background:var(--bg-grad);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
   .gate .box{background:var(--card);border-radius:24px;padding:28px 24px;box-shadow:var(--shadow);width:100%;max-width:360px;text-align:center}
-  .gate h2{color:var(--title);margin-bottom:4px;font-size:1.5rem}
+  .gate h2{color:var(--title);margin-bottom:4px;font-size:1.5rem;display:flex;align-items:center;justify-content:center;gap:9px}
   .gate p{color:var(--muted);font-size:.85rem;margin-bottom:18px}
   .gate input{margin-bottom:11px;text-align:left}
   .gate .btn{background:linear-gradient(135deg,var(--hogar),var(--pers))}
@@ -166,13 +173,40 @@
   .gate .msg.err{color:var(--rojo)}.gate .msg.ok{color:var(--verde)}
   .gate .switch{margin-top:14px;font-size:.83rem;color:var(--muted)}
   .gate .switch b{color:var(--pers);cursor:pointer}
+  .gate .btn{transition:background .3s,box-shadow .3s}
+  .gate.signup .btn{background:linear-gradient(135deg,var(--aho),var(--ing))}
+  .gate.signup .box{box-shadow:0 0 0 2px var(--aho),var(--shadow)}
+  @keyframes gateSwap{from{opacity:.35;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+  .ob-list{text-align:left;display:flex;flex-direction:column;gap:10px;margin:4px 0 18px;font-size:.85rem;color:var(--text)}
+  .ob-list div{background:var(--panel);border-radius:12px;padding:10px 12px;line-height:1.4}
+  .ob-list b{color:var(--title)}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow);border-radius:14px;padding:12px 16px;max-width:340px;width:calc(100% - 32px);font-size:.85rem;line-height:1.35;opacity:0;pointer-events:none;transition:.3s;z-index:60;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  #toast b{color:var(--title)}
 </style>
 </head>
 <body>
 
+<div id="toast"></div>
+
+<div class="gate" id="onboard" style="display:none">
+  <div class="box" style="max-width:410px">
+    <h2><img src="icon-192.png" class="logo" alt="">¡Bienvenida!</h2>
+    <p style="margin-bottom:6px">Esta app te ayuda a organizar tu dinero mes a mes. Así funciona:</p>
+    <div class="ob-list">
+      <div><b>💰 Finanzas</b> — registra ingresos, gastos del hogar, personales, ahorro y deudas. Arriba cambias de mes con ◀ ▶ o deslizando.</div>
+      <div><b>📈 Inversiones</b> — calcula cuánto ganarías y súmalo a tus finanzas.</div>
+      <div><b>🧮 Deudas</b> — calcula el costo de una deuda y convierte tasas.</div>
+      <div><b>📅 Cerrar mes</b> — pasa tu saldo libre y tus gastos fijos al mes siguiente.</div>
+      <div><b>💡 Ayudas</b> — la primera vez que uses un botón, verás un mensajito explicativo.</div>
+    </div>
+    <button class="btn" id="ob-go" style="background:linear-gradient(135deg,var(--aho),var(--pers))">Empezar 🌱</button>
+  </div>
+</div>
+
 <div class="gate" id="gate" style="display:none">
   <div class="box">
-    <h2>🌸 Mis Finanzas</h2>
+    <h2><img src="icon-192.png" class="logo" alt="">Mis Finanzas</h2>
     <p id="gate-sub">Inicia sesión para ver tus datos en todos tus dispositivos</p>
     <input type="email" id="au-email" placeholder="Tu correo" autocomplete="username">
     <input type="password" id="au-pass" placeholder="Tu contraseña" autocomplete="current-password">
@@ -190,21 +224,22 @@
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
           <div class="theme-pop-title">Tema</div>
-          <button class="theme-opt" data-theme="pastel"><span class="to-name">Pastel</span><span class="to-bars"><span style="background:#e89cb6"></span><span style="background:#b39ddb"></span><span style="background:#8fcdb4"></span><span style="background:#f0a07e"></span><span style="background:#e9c879"></span></span></button>
-          <button class="theme-opt" data-theme="neutro"><span class="to-name">Neutro</span><span class="to-bars"><span style="background:#c98f86"></span><span style="background:#8f9bb3"></span><span style="background:#8fae9b"></span><span style="background:#c9a66b"></span><span style="background:#b0a68f"></span></span></button>
-          <button class="theme-opt" data-theme="masculino"><span class="to-name">Oscuro</span><span class="to-bars"><span style="background:#6ea8e0"></span><span style="background:#7f8ce0"></span><span style="background:#4fbf98"></span><span style="background:#e08a5f"></span><span style="background:#d9b45a"></span></span></button>
+          <button class="theme-opt" data-theme="pastel"><span class="to-name">Pastel</span><span class="to-bars"><span style="background:#e084a6"></span><span style="background:#a98fd6"></span><span style="background:#6fc0a2"></span><span style="background:#ec9270"></span><span style="background:#e0b556"></span></span></button>
+          <button class="theme-opt" data-theme="neutro"><span class="to-name">Neutro</span><span class="to-bars"><span style="background:#c4837a"></span><span style="background:#8090ab"></span><span style="background:#7fa38d"></span><span style="background:#c29a58"></span><span style="background:#a89d84"></span></span></button>
+          <button class="theme-opt" data-theme="masculino"><span class="to-name">Oscuro</span><span class="to-bars"><span style="background:#72abe2"></span><span style="background:#8592e6"></span><span style="background:#54c49d"></span><span style="background:#e69066"></span><span style="background:#dfba5f"></span></span></button>
         </div>
       </div>
       <button class="linkbtn" id="logout" style="display:none">Cerrar sesión</button>
     </span>
   </div>
-  <h1>🌸 Mis Finanzas</h1>
+  <h1><img src="icon-192.png" class="logo" alt="">Mis Finanzas</h1>
 
   <div class="banner" id="local-banner" style="display:none">Modo local (solo este dispositivo). Configura Firebase para sincronizar.</div>
 
   <div class="tabs">
     <button class="tab active" id="tab-fin">💰 Finanzas</button>
     <button class="tab" id="tab-inv">📈 Inversiones</button>
+    <button class="tab" id="tab-dcalc">🧮 Deudas</button>
   </div>
 
   <!-- ============ FINANZAS ============ -->
@@ -333,6 +368,24 @@
       <div id="inv-list"></div>
     </div>
   </div>
+
+  <!-- ============ CALCULADORA DE DEUDAS ============ -->
+  <div id="view-dcalc" style="display:none">
+    <div class="card deuda">
+      <h2>🧮 Calculadora de deudas</h2>
+      <label>Banco / tarjeta</label>
+      <input type="text" id="dc-bank" placeholder="Ej: Visa Bancolombia">
+      <label style="margin-top:10px">Valor de la deuda</label>
+      <input type="number" id="dc-amt" placeholder="Ej: 1000000" min="0" inputmode="numeric">
+      <div class="row" style="margin-top:10px">
+        <div><label>% Interés E.A.</label><input type="number" id="dc-ea" placeholder="Ej: 28" min="0" step="0.01" inputmode="decimal"></div>
+        <div><label>% Interés E.M.</label><input type="number" id="dc-em" placeholder="Ej: 2.08" min="0" step="0.01" inputmode="decimal"></div>
+      </div>
+      <div class="note" style="margin-top:6px">Escribe una de las dos tasas y la otra se calcula sola.</div>
+      <div class="inv-result" id="dc-result"></div>
+      <button class="btn deuda" id="dc-add">➕ Agregar a mis deudas</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -355,6 +408,15 @@ const $=id=>document.getElementById(id);
 const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CO');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cssVar=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+
+/* ---- toasts de ayuda (primera vez que se usa cada botón) ---- */
+let toastTimer=null;
+function showToast(msg){const t=$('toast');t.innerHTML=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),7000);}
+function tip(key,msg){try{const seen=JSON.parse(localStorage.getItem('tipsSeen')||'{}');if(seen[key])return;seen[key]=1;localStorage.setItem('tipsSeen',JSON.stringify(seen));}catch(e){}showToast(msg);}
+document.getElementById('toast').onclick=function(){this.classList.remove('show');};
+/* onboarding primera vez */
+function maybeOnboard(){try{if(!localStorage.getItem('onboardingDone'))$('onboard').style.display='flex';}catch(e){}}
+$('ob-go').onclick=()=>{try{localStorage.setItem('onboardingDone','1');}catch(e){}$('onboard').style.display='none';};
 
 let DB={months:{},fixedTemplate:[],investments:[]};
 let viewKey=todayKey();
@@ -452,6 +514,7 @@ const persSpent=()=>M().pers.reduce((s,x)=>s+x.amt,0);
 const deudaTotal=()=>debtsSum(M());
 const syncTemplate=()=>{DB.fixedTemplate=M().hogar.map(x=>({name:x.name,amt:x.amt}));};
 const syncDebtTemplate=()=>{DB.debtTemplate=M().debts.map(d=>({bank:d.bank,dueDay:d.dueDay}));};
+function hogarNote(){const c=M();const pend=hogarTotal()-hogarPaid(),n=c.hogar.filter(x=>!x.paid).length;$('hogar-note').innerHTML=c.hogar.length?`Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${n}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`:'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';}
 
 /* ---- render finanzas ---- */
 function renderAll(){$('mtitle').textContent=keyTitle(viewKey);render();renderInvList();}
@@ -472,12 +535,13 @@ function render(){
   il.innerHTML=ih;
   il.querySelectorAll('[data-idel]').forEach(b=>b.onclick=()=>{c.incomes.splice(+b.dataset.idel,1);persist();render();});
 
+  c.hogar.sort((a,b)=>((a.paid?1:0)-(b.paid?1:0))||(b.amt-a.amt));
   const hl=$('hogar-list');
-  hl.innerHTML=c.hogar.map((x,i)=>`<div class="item ${x.paid?'paid':''}" data-i="${i}"><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><span class="amt">${fmt(x.amt)}</span><button class="del" data-del="${i}">✕</button></div>`).join('');
-  hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.del!==undefined)return;c.hogar[+el.dataset.i].paid=!c.hogar[+el.dataset.i].paid;persist();render();});
+  hl.innerHTML=c.hogar.map((x,i)=>`<div class="item ${x.paid?'paid':''}" data-i="${i}"><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-hamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-del="${i}">✕</button></div>`).join('');
+  hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.del!==undefined||e.target.dataset.hamt!==undefined)return;const i=+el.dataset.i;c.hogar[i].paid=!c.hogar[i].paid;if(c.hogar[i].paid)tip('hpaid','✅ Marcado como pagado. Los pagados bajan al final de la lista.');syncTemplate();persist();render();});
+  hl.querySelectorAll('[data-hamt]').forEach(inp=>{inp.oninput=()=>{c.hogar[+inp.dataset.hamt].amt=+inp.value||0;syncTemplate();persist();renderTotals();};inp.onchange=()=>{persist();render();};});
   hl.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.hogar.splice(+b.dataset.del,1);syncTemplate();persist();render();});
-  const pend=hogarTotal()-hogarPaid(), nPend=c.hogar.filter(x=>!x.paid).length;
-  $('hogar-note').innerHTML=c.hogar.length?`Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${nPend}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`:'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';
+  hogarNote();
 
   const spent=persSpent(), freeP=c.pLimit-spent;
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
@@ -510,6 +574,7 @@ function renderTotals(){
   const sl=$('s-libre');sl.textContent=fmt(libre);sl.className='val '+(libre>=0?'pos':'neg');
   const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length;
   $('deuda-note').innerHTML=c.debts.length?`Total: <b style="color:var(--rojo)">${fmt(deudaTotal())}</b> · Pagado <b style="color:var(--verde)">${fmt(dPaid)}</b> · Faltan <b>${dPend}</b> por pagar`:'';
+  hogarNote();
   drawPie(c,income,libre);
 }
 
@@ -524,6 +589,10 @@ function drawPie(c,income,libre){
   const totalSeg=segs.reduce((s,x)=>s+x.v,0);
   svg.innerHTML='';leg.innerHTML='';
   if(totalSeg<=0){svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${cssVar('--panel')}"/><text x="${cx}" y="${cy}" text-anchor="middle" dy=".3em" fill="${cssVar('--muted')}" font-size="13">Sin datos aún</text>`;leg.innerHTML='<div style="color:var(--muted)">Ingresa tus valores 🍃</div>';$('pie-note').textContent='';return;}
+  const NS='http://www.w3.org/2000/svg';
+  const defs=document.createElementNS(NS,'defs');
+  defs.innerHTML=`<radialGradient id="pieFade" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${r}"><stop offset="0" stop-color="${cardC}" stop-opacity="0"/><stop offset="0.70" stop-color="${cardC}" stop-opacity="0"/><stop offset="1" stop-color="${cardC}" stop-opacity="0.85"/></radialGradient>`;
+  svg.appendChild(defs);
   const denom=income>0?income:totalSeg;let ang=0;
   segs.forEach(s=>{
     const frac=s.v/totalSeg,a1=ang+frac*360,mid=ang+frac*180;
@@ -534,6 +603,7 @@ function drawPie(c,income,libre){
     ang=a1;
     leg.innerHTML+=`<div><span class="sw" style="background:var(--${s.k})"></span>${s.lab} · ${pct}% <b>${fmt(s.v)}</b></div>`;
   });
+  const fade=document.createElementNS('http://www.w3.org/2000/svg','circle');fade.setAttribute('cx',cx);fade.setAttribute('cy',cy);fade.setAttribute('r',r);fade.setAttribute('fill','url(#pieFade)');svg.appendChild(fade);
   const hole=document.createElementNS('http://www.w3.org/2000/svg','circle');hole.setAttribute('cx',cx);hole.setAttribute('cy',cy);hole.setAttribute('r',r*0.45);hole.setAttribute('fill',cardC);svg.appendChild(hole);
   const ct=document.createElementNS('http://www.w3.org/2000/svg','text');ct.setAttribute('x',cx);ct.setAttribute('y',cy-6);ct.setAttribute('text-anchor','middle');ct.setAttribute('fill',cssVar('--soft'));ct.setAttribute('font-size','11');ct.textContent='Ingresos';svg.appendChild(ct);
   const cv=document.createElementNS('http://www.w3.org/2000/svg','text');cv.setAttribute('x',cx);cv.setAttribute('y',cy+12);cv.setAttribute('text-anchor','middle');cv.setAttribute('fill',cssVar('--ink'));cv.setAttribute('font-size','13');cv.setAttribute('font-weight','800');cv.textContent=fmt(income);svg.appendChild(cv);
@@ -579,17 +649,47 @@ $('inv-add').onclick=()=>{
   alert('✅ Inversión agregada. Su rendimiento se sumará mes a mes en tus finanzas, desde '+keyTitle(viewKey)+'.');
 };
 
+/* ---- calculadora de deudas ---- */
+function dcEA2EM(ea){return (Math.pow(1+ea/100,1/12)-1)*100;}
+function dcEM2EA(em){return (Math.pow(1+em/100,12)-1)*100;}
+function renderDcalc(){
+  const P=+$('dc-amt').value||0, em=(+$('dc-em').value||0)/100, ea=+$('dc-ea').value||0, box=$('dc-result');
+  if(P<=0||em<=0){box.innerHTML='<div style="color:var(--muted)">Ingresa el valor y una tasa para ver el costo de la deuda 🌱</div>';return;}
+  const mInt=P*em, y=P*Math.pow(1+em,12), yInt=y-P;
+  let rows='',bal=P;
+  for(let t=0;t<12;t++){const iv=bal*em;bal+=iv;rows+=`<tr><td>Mes ${t+1}</td><td>${fmt(iv)}</td><td>${fmt(bal)}</td></tr>`;}
+  box.innerHTML=`<div style="font-size:.85rem;color:var(--soft)">Equivale a <b>${ea.toFixed(2)}% E.A.</b> / <b>${(em*100).toFixed(3)}% E.M.</b></div>
+    <div style="margin-top:8px;font-size:.85rem">Interés del primer mes si no abonas:</div>
+    <div class="inv-big" style="color:var(--rojo)">${fmt(mInt)}</div>
+    <div style="font-size:.85rem">En 12 meses sin abonar deberías <b>${fmt(y)}</b> (intereses ${fmt(yInt)}).</div>
+    <div class="inv-scroll"><table class="inv-tbl"><thead><tr><th>Mes</th><th>Interés</th><th>Saldo</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+$('dc-ea').oninput=()=>{if($('dc-ea').value!=='')$('dc-em').value=dcEA2EM(+$('dc-ea').value).toFixed(3);renderDcalc();};
+$('dc-em').oninput=()=>{if($('dc-em').value!=='')$('dc-ea').value=dcEM2EA(+$('dc-em').value).toFixed(2);renderDcalc();};
+$('dc-amt').oninput=renderDcalc;
+$('dc-add').onclick=()=>{
+  const bank=$('dc-bank').value.trim()||'Deuda', P=+$('dc-amt').value||0;
+  if(P<=0){alert('Ingresa el valor de la deuda 🌷');return;}
+  M().debts.push({bank,amt:P,dueDay:null,paid:false});
+  syncDebtTemplate();persist();render();showView('fin');
+  tip('dcadd','✅ Se agregó a tus deudas del mes. En 💳 Deuda ponle el día de pago para el recordatorio.');
+};
+
 /* ---- pestañas ---- */
 function showView(v){
   currentView=v;
   $('view-fin').style.display=v==='fin'?'':'none';
   $('view-inv').style.display=v==='inv'?'':'none';
+  $('view-dcalc').style.display=v==='dcalc'?'':'none';
   $('tab-fin').classList.toggle('active',v==='fin');
   $('tab-inv').classList.toggle('active',v==='inv');
+  $('tab-dcalc').classList.toggle('active',v==='dcalc');
   if(v==='inv'){renderInvCalc();renderInvList();}
+  if(v==='dcalc')renderDcalc();
 }
 $('tab-fin').onclick=()=>showView('fin');
-$('tab-inv').onclick=()=>showView('inv');
+$('tab-inv').onclick=()=>{showView('inv');tip('tabinv','📈 Calcula cuánto ganarías invirtiendo y agrégalo a tus finanzas para que sume mes a mes.');};
+$('tab-dcalc').onclick=()=>{showView('dcalc');tip('tabdcalc','🧮 Calcula el costo de una deuda. Escribe el % anual (E.A.) o mensual (E.M.) y se convierten solos.');};
 
 /* ---- navegación meses ---- */
 function goTo(k,dir){
@@ -612,6 +712,7 @@ $('d-add').onclick=()=>{
   M().debts.push({bank,amt,dueDay:day,paid:false});
   $('d-bank').value='';$('d-amt').value='';$('d-day').value='';
   syncDebtTemplate();persist();render();$('d-bank').focus();
+  tip('dadd','💳 Ponle el <b>día de pago</b> y usa <b>📅 Enviar fechas al calendario</b> para recibir el aviso cada mes. El próximo mes se guarda la tarjeta pero no el valor.');
 };
 $('d-amt').onkeydown=e=>{if(e.key==='Enter')$('d-day').focus();};
 $('d-day').onkeydown=e=>{if(e.key==='Enter')$('d-add').click();};
@@ -640,10 +741,11 @@ $('d-ics').onclick=()=>{
   ics+='END:VCALENDAR';
   const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pagos-tarjetas.ics';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+  tip('ics','📅 Abre el archivo descargado en tu iPhone para agregar los recordatorios. Tu calendario te avisará el día de pago a las 8 a.m.');
 };
-$('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();};
-$('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();};
-$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value;if(!n||!a||a<=0){alert('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a});$('p-name').value='';$('p-amt').value='';persist();render();$('p-name').focus();};
+$('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();tip('iadd','💵 Puedes agregar varias fuentes de ingreso (salario, freelance, extras...). Todas se suman.');};
+$('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();tip('hadd','🏠 Toca el <b>círculo</b> de un gasto cuando lo pagues, y toca su <b>valor</b> para editarlo. Se ordenan de mayor a menor solos.');};
+$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value;if(!n||!a||a<=0){alert('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a});$('p-name').value='';$('p-amt').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables. La barra te muestra cuánto te queda de tu límite.');};
 $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
@@ -674,10 +776,11 @@ $('export').onclick=()=>{
   if(DB.investments.length){t+='\n===== INVERSIONES =====\n';DB.investments.forEach(inv=>{const im=invMonthlyRate(inv.ea),FV=inv.principal*Math.pow(1+im,inv.months);t+='- '+inv.name+': '+fmt(inv.principal)+' al '+inv.ea+'% E.A. x '+inv.months+' meses (desde '+keyTitle(inv.start)+') -> ganancia '+fmt(FV-inv.principal)+'\n';});}
   t+='\n----- RESPALDO -----\nDATA:'+JSON.stringify(DB);
   const blob=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mis-finanzas-'+now.toISOString().slice(0,10)+'.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+  tip('export','⬇️ Descargaste un respaldo en texto con todos tus meses. Guárdalo por si cambias de dispositivo.');
 };
 
 /* ---- arranque + Firebase ---- */
-function startApp(){$('root').style.display='';renderAll();}
+function startApp(){$('root').style.display='';renderAll();maybeOnboard();}
 loadLocal();
 applyTheme(localStorage.getItem('theme')||'pastel');
 
@@ -703,6 +806,8 @@ if(configured&&window.firebase){
     $('au-go').textContent=signupMode?'Crear cuenta':'Entrar';
     $('au-switch').innerHTML=signupMode?'¿Ya tienes cuenta? <b id="au-toggle">Inicia sesión</b>':'¿No tienes cuenta? <b id="au-toggle">Créala aquí</b>';
     $('au-toggle').onclick=toggleMode;
+    $('gate').classList.toggle('signup',signupMode);
+    const box=document.querySelector('#gate .box');box.style.animation='none';void box.offsetWidth;box.style.animation='gateSwap .35s ease';
   }
   $('au-toggle').onclick=toggleMode;
   $('au-go').onclick=()=>{
