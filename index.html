@@ -182,9 +182,11 @@
   .ob-list{text-align:left;display:flex;flex-direction:column;gap:10px;margin:4px 0 18px;font-size:.85rem;color:var(--text)}
   .ob-list div{background:var(--panel);border-radius:12px;padding:10px 12px;line-height:1.4}
   .ob-list b{color:var(--title)}
-  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow);border-radius:14px;padding:12px 16px;max-width:340px;width:calc(100% - 32px);font-size:.85rem;line-height:1.35;opacity:0;pointer-events:none;transition:.3s;z-index:60;text-align:center}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow);border-radius:14px;padding:12px 14px;max-width:360px;width:calc(100% - 32px);font-size:.85rem;line-height:1.38;opacity:0;pointer-events:none;transition:.3s;z-index:60;display:flex;align-items:center;gap:10px;text-align:left}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
   #toast b{color:var(--title)}
+  #toast .toast-msg{flex:1}
+  #toast .toast-x{flex-shrink:0;background:var(--panel);border:none;color:var(--soft);font-weight:800;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.95rem}
 </style>
 </head>
 <body>
@@ -396,6 +398,21 @@
       <div class="note" style="margin-top:8px">Agrega dos o más bancos y te marco la opción más económica. Luego con “Elegir” la sumas a tus deudas.</div>
       <div id="dc-table" style="margin-top:12px"></div>
     </div>
+
+    <div class="card deuda">
+      <h2>🚀 Calculadora de avances</h2>
+      <label>Valor de la deuda</label>
+      <input type="number" id="av-amt" placeholder="Ej: 1000000" min="0" inputmode="numeric">
+      <div class="row" style="margin-top:10px">
+        <div><label>Tasa %</label><input type="number" id="av-rate" placeholder="Ej: 2" min="0" step="0.01" inputmode="decimal"></div>
+        <div style="flex:.8"><label>Tipo</label><select id="av-type"><option value="em">E.M.</option><option value="ea">E.A.</option></select></div>
+        <div style="flex:.8"><label>Meses</label><input type="number" id="av-months" placeholder="18" min="1" inputmode="numeric"></div>
+      </div>
+      <label style="margin-top:10px">¿Cuánto vas a pagar al mes?</label>
+      <input type="number" id="av-pay" placeholder="Ej: 100000 (más que la cuota mínima)" min="0" inputmode="numeric">
+      <div class="inv-result" id="av-result"></div>
+      <div class="note" style="margin-top:6px">Compara pagar la cuota mínima vs. pagar más: cuánto ahorras y cuántos meses te quitas.</div>
+    </div>
   </div>
 </div>
 
@@ -421,10 +438,8 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const cssVar=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
 
 /* ---- toasts de ayuda (primera vez que se usa cada botón) ---- */
-let toastTimer=null;
-function showToast(msg){const t=$('toast');t.innerHTML=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),7000);}
+function showToast(msg){const t=$('toast');t.innerHTML='<span class="toast-msg">'+msg+'</span><button class="toast-x" aria-label="Cerrar">✕</button>';t.classList.add('show');t.querySelector('.toast-x').onclick=()=>t.classList.remove('show');}
 function tip(key,msg){try{const seen=JSON.parse(localStorage.getItem('tipsSeen')||'{}');if(seen[key])return;seen[key]=1;localStorage.setItem('tipsSeen',JSON.stringify(seen));}catch(e){}showToast(msg);}
-document.getElementById('toast').onclick=function(){this.classList.remove('show');};
 /* onboarding primera vez */
 function maybeOnboard(){try{if(!localStorage.getItem('onboardingDone'))$('onboard').style.display='flex';}catch(e){}}
 $('ob-go').onclick=()=>{try{localStorage.setItem('onboardingDone','1');}catch(e){}$('onboard').style.display='none';};
@@ -567,7 +582,7 @@ function render(){
   $('aho-reco').innerHTML=`💡 Recomendado (20% de tus ingresos): <b>${fmt(reco)}</b>`;
   $('aho-note').innerHTML=income>0&&c.ahorro>0?(c.ahorro>=reco?`✅ Vas <b>${Math.round(c.ahorro/income*100)}%</b>, ¡por encima del 20%! 🌱`:`Vas en <b>${Math.round(c.ahorro/income*100)}%</b>. Te faltan <b>${fmt(reco-c.ahorro)}</b> para el 20%.`):'';
   const dl=$('deuda-list'), mesN=MONTHS[(+viewKey.split('-')[1])-1];
-  const dSub=d=>{const p=[];if(d.cuotasTotal!==undefined){const info=amortize(d.capital,d.amt,d.im||0);p.push('saldo '+(isFinite(info.total)?fmt(info.total):'—'));p.push('quedan '+(isFinite(info.n)?info.n:'∞')+' de '+d.cuotasTotal+' cuotas');}if(d.manejo)p.push('manejo '+fmt(d.manejo));if(d.dueDay)p.push('límite de pago '+d.dueDay+' de '+mesN);return p.length?` <small style="color:var(--soft);font-weight:600">${p.join(' · ')}</small>`:'';};
+  const dSub=d=>{const p=[];if(d.cuotasTotal!==undefined){const info=amortize(d.capital,d.amt,d.im||0);p.push('saldo '+(isFinite(info.total)?fmt(info.total):'—'));p.push('quedan '+(isFinite(info.n)?info.n:'∞')+' cuotas pagando '+fmt(d.amt));}if(d.manejo)p.push('manejo '+fmt(d.manejo));if(d.dueDay)p.push('límite de pago '+d.dueDay+' de '+mesN);return p.length?` <small style="color:var(--soft);font-weight:600">${p.join(' · ')}</small>`:'';};
   dl.innerHTML=c.debts.length?c.debts.map((d,i)=>`<div class="item debt ${d.paid?'paid':''}" data-di="${i}" style="background:var(--deuda-bg)"><span class="check">${d.paid?'✓':''}</span><span class="nm">💳 ${esc(d.bank)}${dSub(d)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-damt="${i}" value="${d.amt||''}" placeholder="valor">${d.dueDay?'':`<input class="d-day-inline" type="number" inputmode="numeric" min="1" max="31" data-dday="${i}" value="" placeholder="día" title="Día límite de pago">`}${d.cuotasTotal!==undefined?`<button class="del" data-davance="${i}" title="Registrar pago / avance" style="color:var(--verde);font-weight:800">＋</button>`:''}<button class="del" data-ddel="${i}">✕</button></div>`).join(''):'<div class="empty">Sin tarjetas registradas 🌿</div>';
   dl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{const tg=e.target;if(tg.dataset.ddel!==undefined||tg.dataset.damt!==undefined||tg.dataset.dday!==undefined||tg.dataset.davance!==undefined)return;const i=+el.dataset.di,d=c.debts[i];
     if(tg.classList.contains('check')){
@@ -730,6 +745,28 @@ function renderDcTable(){
   box.querySelectorAll('[data-dcpick]').forEach(b=>b.onclick=()=>{const o=dcOptions[+b.dataset.dcpick];const cuota=Math.ceil(o.im>0?o.P*o.im/(1-Math.pow(1+o.im,-o.n)):o.P/o.n);M().debts.push({bank:o.bank,amt:cuota,dueDay:null,paid:false,capital:o.P,cuotaOrig:cuota,cuotasTotal:o.n,im:o.im});syncDebtTemplate();persist();render();showView('fin');tip('dcpick','✅ Se agregó la <b>cuota mensual</b> ('+fmt(cuota)+') a tus Tarjetas de Crédito. Ponle el día límite de pago tocando la casilla “día”.');});
 }
 
+/* ---- calculadora de avances ---- */
+function renderAvance(){
+  const box=$('av-result');if(!box)return;
+  const P=+$('av-amt').value||0, rate=+$('av-rate').value||0, type=$('av-type').value, n=Math.floor(+$('av-months').value||0), pay=+$('av-pay').value||0;
+  if(P<=0||rate<=0||n<=0){box.innerHTML='<div style="color:var(--muted)">Ingresa la deuda, la tasa y los meses 🌱</div>';return;}
+  const im=type==='em'?rate/100:Math.pow(1+rate/100,1/12)-1;
+  const cuotaMin=Math.ceil(P*im/(1-Math.pow(1+im,-n)));
+  const base=amortize(P,cuotaMin,im);
+  let html=`<div style="font-size:.85rem;color:var(--soft)">Cuota mínima: <b>${fmt(cuotaMin)}</b> · plazo ${n} meses · intereses ${fmt(base.interes)}</div>`;
+  if(pay>0){
+    if(pay<cuotaMin){html+=`<div class="note" style="color:var(--rojo);margin-top:8px">Tu pago (${fmt(pay)}) es menor que la cuota mínima (${fmt(cuotaMin)}). Sube el valor.</div>`;}
+    else{
+      const plan=amortize(P,pay,im), saved=base.interes-plan.interes, menos=n-plan.n;
+      html+=`<div style="margin-top:10px;font-size:.85rem">Pagando <b>${fmt(pay)}</b> al mes ahorras:</div>
+        <div class="inv-big" style="color:var(--verde)">${fmt(saved)}</div>
+        <div style="font-size:.85rem">Terminas en <b>${plan.n}</b> meses (${menos} meses menos) · intereses ${fmt(plan.interes)} · total ${fmt(plan.total)}</div>`;
+    }
+  }
+  box.innerHTML=html;
+}
+['av-amt','av-rate','av-type','av-months','av-pay'].forEach(id=>$(id).oninput=renderAvance);
+
 /* ---- pestañas ---- */
 function showView(v){
   currentView=v;
@@ -740,7 +777,7 @@ function showView(v){
   $('tab-inv').classList.toggle('active',v==='inv');
   $('tab-dcalc').classList.toggle('active',v==='dcalc');
   if(v==='inv'){renderInvCalc();renderInvList();}
-  if(v==='dcalc')renderDcTable();
+  if(v==='dcalc'){renderDcTable();renderAvance();}
 }
 $('tab-fin').onclick=()=>showView('fin');
 $('tab-inv').onclick=()=>{showView('inv');tip('tabinv','📈 Calcula cuánto ganarías invirtiendo y agrégalo a tus finanzas para que sume mes a mes.');};
