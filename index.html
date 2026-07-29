@@ -119,11 +119,11 @@
   .mini{padding:10px 14px;border-radius:11px;background:var(--panel);color:var(--title);font-size:.85rem}
   .summary{grid-column:1/-1;background:var(--sum-grad);border-radius:24px;padding:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;box-shadow:var(--shadow)}
   .stat{flex:1 1 86px;max-width:150px;background:var(--stat-bg);border-radius:15px;padding:12px 6px;backdrop-filter:blur(2px);min-width:0;text-align:center}
-  .stat.libre{flex:1 1 100%;max-width:none;background:var(--card);padding:14px 12px;box-shadow:0 4px 14px rgba(120,90,150,.16)}
+  .stat.libre{flex:1 1 100%;max-width:none;background:var(--card);padding:9px 12px;box-shadow:0 3px 10px rgba(120,90,150,.13)}
   .stat .lab{font-size:clamp(.6rem,2.4vw,.72rem);color:var(--soft);font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stat .val{font-size:clamp(.74rem,3vw,1.12rem);font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .stat.libre .lab{font-size:.84rem}
-  .stat.libre .val{font-size:clamp(1.35rem,6vw,1.95rem)}
+  .stat.libre .lab{font-size:.75rem;margin-bottom:1px}
+  .stat.libre .val{font-size:clamp(1.05rem,4.5vw,1.4rem)}
   .stat .val.pos{color:var(--verde)}.stat .val.neg{color:var(--rojo)}
   .item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:12px;margin-bottom:7px;background:var(--hogar-bg);cursor:pointer;transition:.15s;user-select:none;color:var(--text)}
   .item.pers-i{background:var(--pers-bg);cursor:default}
@@ -460,12 +460,14 @@ function invDuration(inv){if(inv.endDate){const dk=inv.endDate.slice(0,7);return
 function invEndText(inv){const dur=invDuration(inv);return inv.endDate?inv.endDate.split('-').reverse().join('/'):keyTitle(shiftKey(inv.start,dur-1));}
 function invAccumValue(key){let v=0;(DB.investments||[]).forEach(inv=>{const t=monthsBetween(inv.start,key),dur=invDuration(inv);if(t>=0&&t<dur){const im=invMonthlyRate(inv.ea);v+=inv.principal*Math.pow(1+im,t+1);}});return v;}
 
-function debtsFromTemplate(){return (DB.debtTemplate||[]).filter(d=>!(d.loan&&(d.cuotasLeft||0)<=0)).map(d=>{const o=d.loan?{bank:d.bank,amt:d.amt||0,dueDay:d.dueDay,paid:false,saldo:d.saldo||0,cuotasLeft:d.cuotasLeft,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:d.dueDay,paid:false};if(d.manejo)o.manejo=d.manejo;return o;});}
+function debtsFromTemplate(){return (DB.debtTemplate||[]).filter(d=>!(d.loan&&(d.capital||0)<=0)).map(d=>{const o=d.loan?{bank:d.bank,amt:d.amt||0,dueDay:d.dueDay,paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:d.dueDay,paid:false};if(d.manejo)o.manejo=d.manejo;return o;});}
 function blankMonth(){return{incomes:[],hogar:DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false})),pLimit:0,pers:[],ahorro:0,debts:debtsFromTemplate()};}
 function debtsSum(s){return (s.debts||[]).reduce((a,x)=>a+(x.amt||0)+(x.manejo||0),0);}
-function remainingCuotas(saldo,cuota,im){if(saldo<=0)return 0;if(!cuota||cuota<=0)return 0;if(im<=0)return Math.ceil(saldo/cuota);const x=1-saldo*im/cuota;if(x<=0)return 999;return Math.max(1,Math.ceil(-Math.log(x)/Math.log(1+im)));}
-function payDebt(d,amount){d._prevSaldo=d.saldo;d._prevCuotas=d.cuotasLeft;const im=d.im||0;const interes=(d.saldo||0)*im;const abono=amount-interes;d.saldo=Math.max(0,(d.saldo||0)-abono);d.cuotasLeft=remainingCuotas(d.saldo,d.amt,im);d.paid=true;}
-function unpayDebt(d){if(d._prevSaldo!==undefined){d.saldo=d._prevSaldo;d.cuotasLeft=d._prevCuotas;delete d._prevSaldo;delete d._prevCuotas;}d.paid=false;}
+// simula la amortización: cuánto falta pagar en total (con intereses) y en cuántas cuotas, si se paga 'cuota' cada mes
+function amortize(capital,cuota,im){capital=capital||0;if(capital<=0.5)return{total:0,n:0,interes:0};if(!cuota||cuota<=0)return{total:Infinity,n:Infinity,interes:Infinity};let bal=capital,total=0,n=0;while(bal>0.5&&n<2400){const it=bal*im;let pay=cuota;if(im>0&&pay<=it)return{total:Infinity,n:Infinity,interes:Infinity};if(pay>bal+it)pay=bal+it;total+=pay;bal=bal+it-pay;n++;}return{total:Math.round(total),n,interes:Math.round(total-capital)};}
+function payDebt(d,amount){d._prevCapital=d.capital;d._prevAmt=d.amt;const im=d.im||0;const it=(d.capital||0)*im;d.capital=Math.max(0,(d.capital||0)-(amount-it));d.amt=amount;d.paid=true;}
+function unpayDebt(d){if(d._prevCapital!==undefined){d.capital=d._prevCapital;d.amt=d._prevAmt;delete d._prevCapital;delete d._prevAmt;}d.paid=false;}
+function debtPayMsg(d,pago,fromCheck){const im=d.im||0;const now=amortize(d.capital,d.amt,im);const orig=amortize(d.capital,d.cuotaOrig||d.amt,im);const savings=Math.max(0,(isFinite(orig.interes)?orig.interes:0)-(isFinite(now.interes)?now.interes:0));let msg=`✅ Pago de <b>${fmt(pago)}</b> en ${esc(d.bank)}. Saldo con intereses <b>${isFinite(now.total)?fmt(now.total):'—'}</b>, quedan <b>${isFinite(now.n)?now.n:'∞'}</b> cuota(s).`;if(savings>0)msg+=` 💡 Si sigues pagando ${fmt(d.amt)} cada mes, terminarás en <b>${now.n}</b> cuotas y te ahorrarás <b>${fmt(savings)}</b> en intereses.`;else if(fromCheck)msg+=` 💡 Tu valor a pagar es ${fmt(d.amt)}, pero puedes tocar ＋ para hacer un avance y reducir tu deuda.`;showToast(msg);}
 function libreOf(key){const s=DB.months[key];if(!s)return 0;const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const per=(s.pers||[]).reduce((a,x)=>a+x.amt,0);return inc-(hog+per+(s.ahorro||0)+debtsSum(s));}
 function ensureMonth(k){
   if(!DB.months[k]){
@@ -484,7 +486,7 @@ function normMonth(m){
   delete m.income;
   if(!Array.isArray(m.debts))m.debts=(typeof m.deuda==='number'&&m.deuda>0)?[{bank:'Tarjeta',amt:m.deuda,dueDay:null}]:[];
   delete m.deuda;
-  m.debts=m.debts.map(d=>{const o={bank:d.bank||'Tarjeta',amt:d.amt||0,dueDay:(d.dueDay!==undefined?d.dueDay:null),paid:!!d.paid};if(d.cuotasTotal!==undefined){o.cuotasTotal=d.cuotasTotal;o.cuotasLeft=(d.cuotasLeft!==undefined?d.cuotasLeft:d.cuotasTotal);o.saldo=d.saldo||0;o.im=d.im||0;}if(d.manejo)o.manejo=d.manejo;return o;});
+  m.debts=m.debts.map(d=>{const o={bank:d.bank||'Tarjeta',amt:d.amt||0,dueDay:(d.dueDay!==undefined?d.dueDay:null),paid:!!d.paid};if(d.cuotasTotal!==undefined){o.cuotasTotal=d.cuotasTotal;o.capital=(d.capital!==undefined?d.capital:(d.saldo!==undefined?d.saldo:0));o.cuotaOrig=(d.cuotaOrig!==undefined?d.cuotaOrig:(o.amt||0));o.im=d.im||0;}if(d.manejo)o.manejo=d.manejo;return o;});
   m.hogar=m.hogar||[];m.pers=m.pers||[];m.pLimit=m.pLimit||0;m.ahorro=m.ahorro||0;
   return m;
 }
@@ -523,7 +525,7 @@ const hogarPaid=()=>M().hogar.filter(x=>x.paid).reduce((s,x)=>s+x.amt,0);
 const persSpent=()=>M().pers.reduce((s,x)=>s+x.amt,0);
 const deudaTotal=()=>debtsSum(M());
 const syncTemplate=()=>{DB.fixedTemplate=M().hogar.map(x=>({name:x.name,amt:x.amt}));};
-const syncDebtTemplate=()=>{DB.debtTemplate=M().debts.map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,dueDay:d.dueDay,amt:d.amt,saldo:d.saldo,cuotasLeft:d.cuotasLeft,cuotasTotal:d.cuotasTotal,im:d.im||0,loan:true}:{bank:d.bank,dueDay:d.dueDay};if(d.manejo)o.manejo=d.manejo;return o;});};
+const syncDebtTemplate=()=>{DB.debtTemplate=M().debts.map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,dueDay:d.dueDay,amt:d.amt,capital:d.capital,cuotaOrig:d.cuotaOrig,cuotasTotal:d.cuotasTotal,im:d.im||0,loan:true}:{bank:d.bank,dueDay:d.dueDay};if(d.manejo)o.manejo=d.manejo;return o;});};
 function hogarNote(){const c=M();const pend=hogarTotal()-hogarPaid(),n=c.hogar.filter(x=>!x.paid).length;$('hogar-note').innerHTML=c.hogar.length?`Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${n}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`:'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';}
 
 /* ---- render finanzas ---- */
@@ -535,7 +537,7 @@ function render(){
   $('s-ing').textContent=fmt(income);
   $('s-hog').textContent=fmt(hogarTotal());
   $('s-per').textContent=fmt(persSpent());
-  $('s-aho').textContent=fmt(c.ahorro);
+  $('s-aho').textContent=fmt(c.ahorro+invAccumValue(viewKey));
   const sl=$('s-libre');sl.textContent=fmt(libre);sl.className='val '+(libre>=0?'pos':'neg');
 
   const il=$('ing-list');
@@ -565,23 +567,23 @@ function render(){
   $('aho-reco').innerHTML=`💡 Recomendado (20% de tus ingresos): <b>${fmt(reco)}</b>`;
   $('aho-note').innerHTML=income>0&&c.ahorro>0?(c.ahorro>=reco?`✅ Vas <b>${Math.round(c.ahorro/income*100)}%</b>, ¡por encima del 20%! 🌱`:`Vas en <b>${Math.round(c.ahorro/income*100)}%</b>. Te faltan <b>${fmt(reco-c.ahorro)}</b> para el 20%.`):'';
   const dl=$('deuda-list'), mesN=MONTHS[(+viewKey.split('-')[1])-1];
-  const dSub=d=>{const p=[];if(d.cuotasTotal!==undefined){p.push('saldo '+fmt(d.saldo||0));p.push('quedan '+(d.cuotasLeft||0)+' de '+d.cuotasTotal+' cuotas');}if(d.manejo)p.push('manejo '+fmt(d.manejo));if(d.dueDay)p.push('límite de pago '+d.dueDay+' de '+mesN);return p.length?` <small style="color:var(--soft);font-weight:600">${p.join(' · ')}</small>`:'';};
+  const dSub=d=>{const p=[];if(d.cuotasTotal!==undefined){const info=amortize(d.capital,d.amt,d.im||0);p.push('saldo '+(isFinite(info.total)?fmt(info.total):'—'));p.push('quedan '+(isFinite(info.n)?info.n:'∞')+' de '+d.cuotasTotal+' cuotas');}if(d.manejo)p.push('manejo '+fmt(d.manejo));if(d.dueDay)p.push('límite de pago '+d.dueDay+' de '+mesN);return p.length?` <small style="color:var(--soft);font-weight:600">${p.join(' · ')}</small>`:'';};
   dl.innerHTML=c.debts.length?c.debts.map((d,i)=>`<div class="item debt ${d.paid?'paid':''}" data-di="${i}" style="background:var(--deuda-bg)"><span class="check">${d.paid?'✓':''}</span><span class="nm">💳 ${esc(d.bank)}${dSub(d)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-damt="${i}" value="${d.amt||''}" placeholder="valor">${d.dueDay?'':`<input class="d-day-inline" type="number" inputmode="numeric" min="1" max="31" data-dday="${i}" value="" placeholder="día" title="Día límite de pago">`}${d.cuotasTotal!==undefined?`<button class="del" data-davance="${i}" title="Registrar pago / avance" style="color:var(--verde);font-weight:800">＋</button>`:''}<button class="del" data-ddel="${i}">✕</button></div>`).join(''):'<div class="empty">Sin tarjetas registradas 🌿</div>';
   dl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{const tg=e.target;if(tg.dataset.ddel!==undefined||tg.dataset.damt!==undefined||tg.dataset.dday!==undefined||tg.dataset.davance!==undefined)return;const i=+el.dataset.di,d=c.debts[i];
     if(tg.classList.contains('check')){
       if(d.cuotasTotal!==undefined){
-        if(!d.paid){payDebt(d,d.amt);showToast(`✅ Pagaste ${fmt(d.amt)} de <b>${esc(d.bank)}</b>. Nuevo saldo <b>${fmt(d.saldo)}</b>, quedan <b>${d.cuotasLeft}</b> cuota(s). 💡 Tu valor a pagar es ${fmt(d.amt)}, pero puedes tocar ＋ para hacer un avance y reducir tu deuda.`);}
+        if(!d.paid){const pago=d.amt;payDebt(d,pago);debtPayMsg(d,pago,true);}
         else{unpayDebt(d);}
         syncDebtTemplate();
       }else{d.paid=!d.paid;}
       persist();render();return;
     }
     const v=prompt('Cuota de manejo mensual de '+d.bank+' (0 si no tiene):',d.manejo||0);if(v===null)return;const n=Math.max(0,Math.round(+v||0));if(n>0)d.manejo=n;else delete d.manejo;syncDebtTemplate();persist();render();showToast(n>0?`Cuota de manejo de <b>${fmt(n)}</b> agregada a ${esc(d.bank)}.`:`Quitaste la cuota de manejo de ${esc(d.bank)}.`);});
-  dl.querySelectorAll('[data-davance]').forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.davance,d=c.debts[i];const v=prompt('Tu cuota del mes es '+fmt(d.amt)+' (incluye intereses).\n¿Cuánto vas a pagar este mes? Paga más para reducir tu deuda:',d.amt);if(v===null)return;const amount=Math.max(0,Math.round(+v||0));if(amount<=0)return;if(d.paid)unpayDebt(d);payDebt(d,amount);syncDebtTemplate();persist();render();showToast(`✅ Pago de <b>${fmt(amount)}</b> en ${esc(d.bank)}. ${amount>d.amt?'Avance de '+fmt(amount-d.amt)+'. ':''}Nuevo saldo <b>${fmt(d.saldo)}</b>, quedan <b>${d.cuotasLeft}</b> cuota(s).`);});
+  dl.querySelectorAll('[data-davance]').forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.davance,d=c.debts[i];const v=prompt('Tu cuota actual es '+fmt(d.amt)+'.\n¿Cuánto vas a pagar cada mes? Paga más para reducir tu deuda e intereses:',d.amt);if(v===null)return;const amount=Math.max(0,Math.round(+v||0));if(amount<=0)return;if(d.paid)unpayDebt(d);payDebt(d,amount);syncDebtTemplate();persist();render();debtPayMsg(d,amount,false);});
   dl.querySelectorAll('[data-damt]').forEach(inp=>inp.oninput=()=>{c.debts[+inp.dataset.damt].amt=+inp.value||0;persist();renderTotals();});
   dl.querySelectorAll('[data-dday]').forEach(inp=>{inp.oninput=()=>{const v=Math.floor(+inp.value);c.debts[+inp.dataset.dday].dueDay=(v>=1&&v<=31)?v:null;syncDebtTemplate();persist();};inp.onchange=()=>render();});
   dl.querySelectorAll('[data-ddel]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.debts.splice(+b.dataset.ddel,1);syncDebtTemplate();persist();render();});
-  const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length, dSaldo=c.debts.reduce((a,x)=>a+(x.saldo||0),0);
+  const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length, dSaldo=c.debts.reduce((a,x)=>{if(x.cuotasTotal!==undefined){const t=amortize(x.capital,x.amt,x.im||0).total;return a+(isFinite(t)?t:0);}return a;},0);
   $('deuda-note').innerHTML=c.debts.length?`Cuotas del mes: <b style="color:var(--rojo)">${fmt(deudaTotal())}</b> · Pagado <b style="color:var(--verde)">${fmt(dPaid)}</b> · Faltan <b>${dPend}</b>${dSaldo>0?` · Saldo pendiente <b style="color:var(--rojo)">${fmt(dSaldo)}</b>`:''}`:'';
 
   $('p-limit').value=c.pLimit||'';$('ahorro').value=c.ahorro||'';
@@ -595,7 +597,7 @@ function renderTotals(){
   const libre=income-(hogarTotal()+persSpent()+c.ahorro+deudaTotal());
   $('s-ing').textContent=fmt(income);$('s-hog').textContent=fmt(hogarTotal());$('s-per').textContent=fmt(persSpent());$('s-aho').textContent=fmt(c.ahorro+invAccumValue(viewKey));
   const sl=$('s-libre');sl.textContent=fmt(libre);sl.className='val '+(libre>=0?'pos':'neg');
-  const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length, dSaldo=c.debts.reduce((a,x)=>a+(x.saldo||0),0);
+  const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length, dSaldo=c.debts.reduce((a,x)=>{if(x.cuotasTotal!==undefined){const t=amortize(x.capital,x.amt,x.im||0).total;return a+(isFinite(t)?t:0);}return a;},0);
   $('deuda-note').innerHTML=c.debts.length?`Cuotas del mes: <b style="color:var(--rojo)">${fmt(deudaTotal())}</b> · Pagado <b style="color:var(--verde)">${fmt(dPaid)}</b> · Faltan <b>${dPend}</b>${dSaldo>0?` · Saldo pendiente <b style="color:var(--rojo)">${fmt(dSaldo)}</b>`:''}`:'';
   const spent=persSpent(), freeP=c.pLimit-spent;
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
@@ -711,7 +713,7 @@ function renderDcTable(){
   const box=$('dc-table');
   if(!dcOptions.length){box.innerHTML='<div class="empty">Agrega bancos arriba para compararlos 🌿</div>';return;}
   const rows=dcOptions.map((o,i)=>{
-    const cuota=o.im>0?o.P*o.im/(1-Math.pow(1+o.im,-o.n)):o.P/o.n;
+    const cuota=Math.ceil(o.im>0?o.P*o.im/(1-Math.pow(1+o.im,-o.n)):o.P/o.n);
     const total=cuota*o.n, interes=total-o.P;
     return Object.assign({},o,{i,cuota,total,interes});
   });
@@ -725,7 +727,7 @@ function renderDcTable(){
     </tr>`).join('')}</tbody></table></div>
     ${rows.length>1?`<div class="reco" style="margin-top:12px">✅ La mejor opción es <b>${esc(best.bank)}</b>: cuota de <b>${fmt(best.cuota)}</b>/mes y pagas <b>${fmt(best.total)}</b> en total (solo ${fmt(best.interes)} de interés).</div>`:''}`;
   box.querySelectorAll('[data-dcdel]').forEach(b=>b.onclick=()=>{dcOptions.splice(+b.dataset.dcdel,1);renderDcTable();});
-  box.querySelectorAll('[data-dcpick]').forEach(b=>b.onclick=()=>{const o=dcOptions[+b.dataset.dcpick];const cuota=Math.round(o.im>0?o.P*o.im/(1-Math.pow(1+o.im,-o.n)):o.P/o.n);M().debts.push({bank:o.bank,amt:cuota,dueDay:null,paid:false,saldo:o.P,cuotasLeft:o.n,cuotasTotal:o.n,im:o.im});syncDebtTemplate();persist();render();showView('fin');tip('dcpick','✅ Se agregó la <b>cuota mensual</b> ('+fmt(cuota)+') a tus Tarjetas de Crédito. Ponle el día límite de pago tocando la casilla “día”.');});
+  box.querySelectorAll('[data-dcpick]').forEach(b=>b.onclick=()=>{const o=dcOptions[+b.dataset.dcpick];const cuota=Math.ceil(o.im>0?o.P*o.im/(1-Math.pow(1+o.im,-o.n)):o.P/o.n);M().debts.push({bank:o.bank,amt:cuota,dueDay:null,paid:false,capital:o.P,cuotaOrig:cuota,cuotasTotal:o.n,im:o.im});syncDebtTemplate();persist();render();showView('fin');tip('dcpick','✅ Se agregó la <b>cuota mensual</b> ('+fmt(cuota)+') a tus Tarjetas de Crédito. Ponle el día límite de pago tocando la casilla “día”.');});
 }
 
 /* ---- pestañas ---- */
@@ -765,8 +767,8 @@ $('d-add').onclick=()=>{
   if(!bank||!P||P<=0){alert('Escribe el banco y un valor válido 🌷');return;}
   let debt;
   if(cuotas>0){
-    const im=rate/100, cuota=Math.round(im>0?P*im/(1-Math.pow(1+im,-cuotas)):P/cuotas);
-    debt={bank,amt:cuota,dueDay:day,paid:false,saldo:P,cuotasLeft:cuotas,cuotasTotal:cuotas,im};
+    const im=rate/100, cuota=Math.ceil(im>0?P*im/(1-Math.pow(1+im,-cuotas)):P/cuotas);
+    debt={bank,amt:cuota,dueDay:day,paid:false,capital:P,cuotaOrig:cuota,cuotasTotal:cuotas,im};
   }else{
     debt={bank,amt:P,dueDay:day,paid:false};
   }
