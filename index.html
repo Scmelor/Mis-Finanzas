@@ -441,14 +441,17 @@ const cssVar=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
 function showToast(msg){const t=$('toast');t.innerHTML='<span class="toast-msg">'+msg+'</span><button class="toast-x" aria-label="Cerrar">✕</button>';t.classList.add('show');t.querySelector('.toast-x').onclick=()=>t.classList.remove('show');}
 function tip(key,msg){try{const seen=JSON.parse(localStorage.getItem('tipsSeen')||'{}');if(seen[key])return;seen[key]=1;localStorage.setItem('tipsSeen',JSON.stringify(seen));}catch(e){}showToast(msg);}
 /* onboarding primera vez */
-function maybeOnboard(){try{if(!localStorage.getItem('onboardingDone'))$('onboard').style.display='flex';}catch(e){}}
-$('ob-go').onclick=()=>{try{localStorage.setItem('onboardingDone','1');}catch(e){}$('onboard').style.display='none';};
+function hasData(){if((DB.investments||[]).length)return true;for(const k in (DB.months||{})){if(monthHasData(DB.months[k]))return true;}return false;}
+function maybeOnboard(){if(onboardChecked)return;onboardChecked=true;let seen=false;try{seen=!!localStorage.getItem('onboardingDone');}catch(e){}if(DB.onboarded||seen||hasData())return;$('onboard').style.display='flex';}
+$('ob-go').onclick=()=>{try{localStorage.setItem('onboardingDone','1');}catch(e){}DB.onboarded=true;persist();$('onboard').style.display='none';};
 
 let DB={months:{},fixedTemplate:[],investments:[]};
 let viewKey=todayKey();
-let cloud=false, uid=null, applyingRemote=false, signupMode=false, currentView='fin';
+let cloud=false, uid=null, applyingRemote=false, signupMode=false, currentView='fin', firstLoad=true, onboardChecked=false;
 
 function todayKey(){const n=new Date();return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
+function monthHasData(m){return !!m&&((m.incomes&&m.incomes.length)||(m.hogar&&m.hogar.length)||(m.pers&&m.pers.length)||(m.debts&&m.debts.length)||m.ahorro||m.pLimit);}
+function lastMonthKey(){const ks=Object.keys(DB.months||{}).filter(k=>monthHasData(DB.months[k])).sort();return ks.length?ks[ks.length-1]:todayKey();}
 function keyTitle(k){const[y,m]=k.split('-');return MONTHS[(+m)-1]+' '+y;}
 function shiftKey(k,d){let[y,m]=k.split('-').map(Number);m+=d;while(m<1){m+=12;y--;}while(m>12){m-=12;y++;}return y+'-'+String(m).padStart(2,'0');}
 function monthsBetween(a,b){const[ya,ma]=a.split('-').map(Number),[yb,mb]=b.split('-').map(Number);return (yb-ya)*12+(mb-ma);}
@@ -474,6 +477,7 @@ function invMonthlyRate(ea){return Math.pow(1+ea/100,1/12)-1;}
 function invDuration(inv){if(inv.endDate){const dk=inv.endDate.slice(0,7);return Math.max(1,monthsBetween(inv.start,dk)+1);}return inv.months;}
 function invEndText(inv){const dur=invDuration(inv);return inv.endDate?inv.endDate.split('-').reverse().join('/'):keyTitle(shiftKey(inv.start,dur-1));}
 function invAccumValue(key){let v=0;(DB.investments||[]).forEach(inv=>{const t=monthsBetween(inv.start,key),dur=invDuration(inv);if(t>=0&&t<dur){const im=invMonthlyRate(inv.ea);v+=inv.principal*Math.pow(1+im,t+1);}});return v;}
+function invPrincipalFor(key){let v=0;(DB.investments||[]).forEach(inv=>{if(inv.start===key)v+=inv.principal;});return v;}
 
 function debtsFromTemplate(){return (DB.debtTemplate||[]).filter(d=>!(d.loan&&(d.capital||0)<=0)).map(d=>{const o=d.loan?{bank:d.bank,amt:d.amt||0,dueDay:d.dueDay,paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:d.dueDay,paid:false};if(d.manejo)o.manejo=d.manejo;return o;});}
 function blankMonth(){return{incomes:[],hogar:DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false})),pLimit:0,pers:[],ahorro:0,debts:debtsFromTemplate()};}
@@ -483,7 +487,7 @@ function amortize(capital,cuota,im){capital=capital||0;if(capital<=0.5)return{to
 function payDebt(d,amount){d._prevCapital=d.capital;d._prevAmt=d.amt;const im=d.im||0;const it=(d.capital||0)*im;d.capital=Math.max(0,(d.capital||0)-(amount-it));d.amt=amount;d.paid=true;}
 function unpayDebt(d){if(d._prevCapital!==undefined){d.capital=d._prevCapital;d.amt=d._prevAmt;delete d._prevCapital;delete d._prevAmt;}d.paid=false;}
 function debtPayMsg(d,pago,fromCheck){const im=d.im||0;const now=amortize(d.capital,d.amt,im);const orig=amortize(d.capital,d.cuotaOrig||d.amt,im);const savings=Math.max(0,(isFinite(orig.interes)?orig.interes:0)-(isFinite(now.interes)?now.interes:0));let msg=`✅ Pago de <b>${fmt(pago)}</b> en ${esc(d.bank)}. Saldo con intereses <b>${isFinite(now.total)?fmt(now.total):'—'}</b>, quedan <b>${isFinite(now.n)?now.n:'∞'}</b> cuota(s).`;if(savings>0)msg+=` 💡 Si sigues pagando ${fmt(d.amt)} cada mes, terminarás en <b>${now.n}</b> cuotas y te ahorrarás <b>${fmt(savings)}</b> en intereses.`;else if(fromCheck)msg+=` 💡 Tu valor a pagar es ${fmt(d.amt)}, pero puedes tocar ＋ para hacer un avance y reducir tu deuda.`;showToast(msg);}
-function libreOf(key){const s=DB.months[key];if(!s)return 0;const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const per=(s.pers||[]).reduce((a,x)=>a+x.amt,0);return inc-(hog+per+(s.ahorro||0)+debtsSum(s));}
+function libreOf(key){const s=DB.months[key];if(!s)return 0;const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const per=(s.pers||[]).reduce((a,x)=>a+x.amt,0);return inc-(hog+per+(s.ahorro||0)+debtsSum(s)+invPrincipalFor(key));}
 function ensureMonth(k){
   if(!DB.months[k]){
     const m=blankMonth();
@@ -547,7 +551,7 @@ function hogarNote(){const c=M();const pend=hogarTotal()-hogarPaid(),n=c.hogar.f
 function renderAll(){$('mtitle').textContent=keyTitle(viewKey);render();renderInvList();}
 function render(){
   const c=M(), income=incomeStored();
-  const allocated=hogarTotal()+persSpent()+c.ahorro+deudaTotal();
+  const allocated=hogarTotal()+persSpent()+c.ahorro+deudaTotal()+invPrincipalFor(viewKey);
   const libre=income-allocated;
   $('s-ing').textContent=fmt(income);
   $('s-hog').textContent=fmt(hogarTotal());
@@ -609,7 +613,7 @@ function render(){
 /* actualiza totales/torta sin reconstruir las listas (para escribir el valor sin perder el foco) */
 function renderTotals(){
   const c=M(), income=incomeStored();
-  const libre=income-(hogarTotal()+persSpent()+c.ahorro+deudaTotal());
+  const libre=income-(hogarTotal()+persSpent()+c.ahorro+deudaTotal()+invPrincipalFor(viewKey));
   $('s-ing').textContent=fmt(income);$('s-hog').textContent=fmt(hogarTotal());$('s-per').textContent=fmt(persSpent());$('s-aho').textContent=fmt(c.ahorro+invAccumValue(viewKey));
   const sl=$('s-libre');sl.textContent=fmt(libre);sl.className='val '+(libre>=0?'pos':'neg');
   const dPaid=c.debts.filter(d=>d.paid).reduce((a,x)=>a+x.amt,0), dPend=c.debts.filter(d=>!d.paid).length, dSaldo=c.debts.reduce((a,x)=>{if(x.cuotasTotal!==undefined){const t=amortize(x.capital,x.amt,x.im||0).total;return a+(isFinite(t)?t:0);}return a;},0);
@@ -628,7 +632,7 @@ function slicePath(cx,cy,r,a0,a1){const[x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(c
 function drawPie(c,income,libre){
   const svg=$('pie'),leg=$('legend'),cx=120,cy=120,r=95;
   const cardC=cssVar('--card');
-  const segs=[{k:'hogar',lab:'Hogar',v:hogarTotal()},{k:'pers',lab:'Personales',v:persSpent()},{k:'aho',lab:'Ahorro',v:c.ahorro},{k:'deuda',lab:'Tarjetas',v:deudaTotal()}].filter(s=>s.v>0);
+  const segs=[{k:'hogar',lab:'Hogar',v:hogarTotal()},{k:'pers',lab:'Personales',v:persSpent()},{k:'aho',lab:'Ahorro',v:c.ahorro},{k:'inv',lab:'Inversión',v:invPrincipalFor(viewKey)},{k:'deuda',lab:'Tarjetas',v:deudaTotal()}].filter(s=>s.v>0);
   if(libre>0)segs.push({k:'libre',lab:'Libre',v:libre});
   const totalSeg=segs.reduce((s,x)=>s+x.v,0);
   svg.innerHTML='';leg.innerHTML='';
@@ -880,7 +884,7 @@ $('export').onclick=()=>{
 };
 
 /* ---- arranque + Firebase ---- */
-function startApp(){$('root').style.display='';renderAll();maybeOnboard();}
+function startApp(){$('root').style.display='';renderAll();}
 loadLocal();
 applyTheme(localStorage.getItem('theme')||'pastel');
 
@@ -895,8 +899,8 @@ if(configured&&window.firebase){
       startApp();
       firebase.database().ref('users/'+uid).on('value',snap=>{
         const v=snap.val();
-        if(v){applyingRemote=true;DB=v;normDB();ensureMonth(viewKey);renderAll();applyingRemote=false;}
-        else{firebase.database().ref('users/'+uid).set(DB).catch(()=>{});}
+        if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();applyingRemote=false;}
+        else{if(firstLoad){viewKey=lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(DB).catch(()=>{});maybeOnboard();}
       });
     }else{$('gate').style.display='flex';$('root').style.display='none';}
   });
@@ -919,7 +923,7 @@ if(configured&&window.firebase){
   };
   $('logout').onclick=()=>auth.signOut();
 }else{
-  $('local-banner').style.display='';startApp();
+  $('local-banner').style.display='';viewKey=lastMonthKey();ensureMonth(viewKey);startApp();maybeOnboard();
 }
 function setMsg(t,cls){const m=$('au-msg');m.textContent=t;m.className='msg '+(cls||'');}
 function authErr(e){const c=(e&&e.code)||'';
