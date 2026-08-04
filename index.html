@@ -147,11 +147,14 @@
   .bar{height:20px;background:var(--panel);border-radius:11px;overflow:hidden;margin-top:10px}
   .bar>span{display:block;height:100%;border-radius:11px;transition:.5s;width:0}
   .bar.pers>span{background:linear-gradient(90deg,var(--pers),var(--pers-l))}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
-  .cal-h{text-align:center;font-size:.66rem;font-weight:700;color:var(--soft)}
-  .cal-d{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.8rem;border-radius:9px;background:var(--panel);color:var(--text)}
+  .pie-cal{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .pie-col,.cal-col{flex:1;min-width:230px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+  .cal-h{text-align:center;font-size:.6rem;font-weight:700;color:var(--soft)}
+  .cal-d{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.72rem;border-radius:8px;background:var(--panel);color:var(--text)}
   .cal-d.cal-p{background:var(--pers);color:#fff;font-weight:700;cursor:pointer}
-  .cal-due{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--deuda)}
+  .cal-d.cal-due-day{background:var(--deuda);color:#fff;font-weight:800;cursor:pointer}
+  .cal-dot-p{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--pers)}
   .pie-card{grid-column:1/-1}
   .pie-wrap{display:flex;align-items:center;gap:22px;justify-content:center;flex-wrap:wrap;padding:6px 0}
   #pie{filter:drop-shadow(0 10px 20px rgba(90,70,120,.22))}
@@ -259,6 +262,7 @@
       <button id="nextM" title="Mes siguiente / nuevo">▶</button>
     </div>
     <div class="mhint">◀ mes anterior · nuevo mes ▶ &nbsp;·&nbsp; también puedes deslizar</div>
+    <div class="mhint" id="periodo" style="cursor:pointer;margin-top:-8px"></div>
 
     <div id="app">
       <div class="grid">
@@ -345,20 +349,23 @@
         </div>
 
         <div class="card pie-card">
-          <h2>📊 Distribución de tus ingresos (100%)</h2>
-          <div class="pie-wrap">
-            <svg id="pie" width="240" height="240" viewBox="0 0 240 240"></svg>
-            <div class="legend" id="legend"></div>
-          </div>
-          <div class="note" id="pie-note" style="text-align:center"></div>
-        </div>
-
-        <div class="card" style="grid-column:1/-1">
-          <h2 id="cal-title">📅 Calendario</h2>
-          <div id="cal-body"></div>
-          <div class="note" style="margin-top:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:13px;height:13px;border-radius:4px;background:var(--pers);display:inline-block"></span>gasto personal</span>
-            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--deuda);display:inline-block"></span>límite de pago tarjeta</span>
+          <div class="pie-cal">
+            <div class="pie-col">
+              <h2>📊 Distribución (100%)</h2>
+              <div class="pie-wrap">
+                <svg id="pie" width="240" height="240" viewBox="0 0 240 240"></svg>
+                <div class="legend" id="legend"></div>
+              </div>
+              <div class="note" id="pie-note" style="text-align:center"></div>
+            </div>
+            <div class="cal-col">
+              <h2 id="cal-title" style="font-size:.95rem">📅 Calendario</h2>
+              <div id="cal-body"></div>
+              <div class="note" style="margin-top:10px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:4px;background:var(--pers);display:inline-block"></span>gasto personal</span>
+                <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:4px;background:var(--deuda);display:inline-block"></span>pago de tarjeta</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -558,7 +565,7 @@ const syncDebtTemplate=()=>{DB.debtTemplate=M().debts.map(d=>{const o=d.cuotasTo
 function hogarNote(){const c=M();const pend=hogarTotal()-hogarPaid(),n=c.hogar.filter(x=>!x.paid).length;$('hogar-note').innerHTML=c.hogar.length?`Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${n}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`:'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';}
 
 /* ---- render finanzas ---- */
-function renderAll(){$('mtitle').textContent=keyTitle(viewKey);const atMin=viewKey<=MIN_KEY;$('prevM').style.opacity=atMin?'.35':'1';$('prevM').style.pointerEvents=atMin?'none':'auto';render();renderInvList();}
+function renderAll(){$('mtitle').textContent=keyTitle(viewKey);const atMin=viewKey<=MIN_KEY;$('prevM').style.opacity=atMin?'.35':'1';$('prevM').style.pointerEvents=atMin?'none':'auto';render();renderInvList();renderPeriodo();}
 function render(){
   const c=M(), income=incomeStored();
   const allocated=hogarTotal()+persSpent()+c.ahorro+deudaTotal()+invPrincipalFor(viewKey);
@@ -622,20 +629,30 @@ function render(){
 }
 
 /* ---- calendario del mes ---- */
+function calDates(){
+  const[y,mo]=viewKey.split('-').map(Number), C=DB.cutoffDay, arr=[];
+  if(!C){const daysIn=new Date(y,mo,0).getDate();for(let d=1;d<=daysIn;d++)arr.push(new Date(y,mo-1,d));return arr;}
+  const pDays=new Date(y,mo-1,0).getDate(), tDays=new Date(y,mo,0).getDate();
+  const start=new Date(y,mo-2,Math.min(C,pDays)), end=new Date(y,mo-1,Math.min(C,tDays));
+  let d=new Date(start);while(d<end){arr.push(new Date(d));d.setDate(d.getDate()+1);}
+  return arr;
+}
 function renderCalendar(){
   const box=$('cal-body');if(!box)return;
-  const [y,mo]=viewKey.split('-').map(Number), c=M();
-  const tt=$('cal-title');if(tt)tt.textContent='📅 Calendario de '+keyTitle(viewKey);
-  const daysIn=new Date(y,mo,0).getDate(), firstW=(new Date(y,mo-1,1).getDay()+6)%7;
-  const persDay={}; (c.pers||[]).forEach(x=>{if(x.date&&x.date.slice(0,7)===viewKey){const d=+x.date.slice(8,10);persDay[d]=(persDay[d]||0)+x.amt;}});
-  const dueDay={}; (c.debts||[]).forEach(x=>{if(x.dueDay)dueDay[x.dueDay]=true;});
+  const c=M();
+  const tt=$('cal-title');if(tt)tt.textContent='📅 '+keyTitle(viewKey);
+  const dates=calDates(), pad=n=>String(n).padStart(2,'0'), ymd=dt=>dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+  const persByDate={}; (c.pers||[]).forEach(x=>{if(x.date)persByDate[x.date]=(persByDate[x.date]||0)+x.amt;});
+  const dueSet={}; (c.debts||[]).forEach(x=>{if(x.dueDay)dueSet[x.dueDay]=true;});
+  const firstW=(dates[0].getDay()+6)%7;
   let html='<div class="cal-grid">'+['Lu','Ma','Mi','Ju','Vi','Sa','Do'].map(d=>`<div class="cal-h">${d}</div>`).join('');
   for(let i=0;i<firstW;i++)html+='<div></div>';
-  for(let d=1;d<=daysIn;d++){const hasP=persDay[d]!==undefined,hasD=dueDay[d];html+=`<div class="cal-d${hasP?' cal-p':''}"${hasP?` data-calday="${d}"`:''}>${d}${hasD?'<span class="cal-due"></span>':''}</div>`;}
+  dates.forEach(dt=>{const ds=ymd(dt),dn=dt.getDate();const hasP=persByDate[ds]!==undefined,hasD=dueSet[dn];let cls='cal-d';if(hasD)cls+=' cal-due-day';else if(hasP)cls+=' cal-p';const dot=(hasD&&hasP)?'<span class="cal-dot-p"></span>':'';html+=`<div class="${cls}"${(hasP||hasD)?` data-cald="${ds}" data-caldn="${dn}"`:''}>${dn}${dot}</div>`;});
   html+='</div>';
   box.innerHTML=html;
-  box.querySelectorAll('[data-calday]').forEach(el=>el.onclick=()=>{const d=+el.dataset.calday;const items=(c.pers||[]).filter(x=>x.date&&x.date.slice(0,7)===viewKey&&(+x.date.slice(8,10))===d);showToast('📅 '+d+' de '+MONTHS[mo-1]+':<br>'+items.map(x=>esc(x.name)+' — '+fmt(x.amt)).join('<br>'));});
+  box.querySelectorAll('[data-cald]').forEach(el=>el.onclick=()=>{const ds=el.dataset.cald,dn=+el.dataset.caldn,parts=ds.split('-');const items=(c.pers||[]).filter(x=>x.date===ds);const lines=[];if(dueSet[dn])lines.push('💳 Pago/límite de tarjeta');items.forEach(x=>lines.push(esc(x.name)+' — '+fmt(x.amt)));showToast('📅 '+(+parts[2])+' de '+MONTHS[(+parts[1])-1]+':<br>'+lines.join('<br>'));});
 }
+function renderPeriodo(){const el=$('periodo');if(!el)return;const[y,mo]=viewKey.split('-').map(Number);if(DB.cutoffDay){const prev=MONTHS[(mo-2+12)%12];el.innerHTML='📆 del <b>'+DB.cutoffDay+' de '+prev+'</b> al <b>'+DB.cutoffDay+' de '+MONTHS[mo-1]+'</b> · toca para cambiar';}else{el.innerHTML='📆 toca para definir tu día de corte (ej: del 25 al 25)';}}
 
 /* actualiza totales/torta sin reconstruir las listas (para escribir el valor sin perder el foco) */
 function renderTotals(){
@@ -821,6 +838,7 @@ function goTo(k,dir){
   const app=$('app');app.classList.remove('slideL','slideR');void app.offsetWidth;app.classList.add(dir==='next'?'slideL':'slideR');
   renderAll();
 }
+$('periodo').onclick=()=>{const v=prompt('Tu mes va de qué día a qué día (día de corte, ej: 25). Déjalo vacío para usar el mes normal del 1 al fin:',DB.cutoffDay||'');if(v===null)return;const n=Math.floor(+v||0);if(n>=1&&n<=31)DB.cutoffDay=n;else delete DB.cutoffDay;persist();renderPeriodo();};
 $('prevM').onclick=()=>goTo(shiftKey(viewKey,-1),'prev');
 $('nextM').onclick=()=>goTo(shiftKey(viewKey,1),'next');
 let tsx=null,tsy=null;const appEl=$('app');
