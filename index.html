@@ -533,6 +533,7 @@ function migrateV2(old){
   return {months,fixedTemplate:old.fixedTemplate||[],investments:[],debtTemplate:[]};
 }
 function persist(){
+  DB.lastView=viewKey;
   try{localStorage.setItem('finanzasV3',JSON.stringify(DB));localStorage.setItem('viewKeyV3',viewKey);}catch(e){}
   if(cloud&&uid&&!applyingRemote){firebase.database().ref('users/'+uid).set(DB).catch(()=>{});}
 }
@@ -789,7 +790,7 @@ $('tab-dcalc').onclick=()=>{showView('dcalc');tip('tabdcalc','🧮 Calcula el co
 
 /* ---- navegación meses ---- */
 function goTo(k,dir){
-  viewKey=k;ensureMonth(k);persist();
+  viewKey=k;firstLoad=false;ensureMonth(k);persist();
   const app=$('app');app.classList.remove('slideL','slideR');void app.offsetWidth;app.classList.add(dir==='next'?'slideL':'slideR');
   renderAll();
 }
@@ -899,8 +900,8 @@ if(configured&&window.firebase){
       startApp();
       firebase.database().ref('users/'+uid).on('value',snap=>{
         const v=snap.val();
-        if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();applyingRemote=false;}
-        else{if(firstLoad){viewKey=lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(DB).catch(()=>{});maybeOnboard();}
+        if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();applyingRemote=false;}
+        else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(DB).catch(()=>{});maybeOnboard();}
       });
     }else{$('gate').style.display='flex';$('root').style.display='none';}
   });
@@ -923,7 +924,7 @@ if(configured&&window.firebase){
   };
   $('logout').onclick=()=>auth.signOut();
 }else{
-  $('local-banner').style.display='';viewKey=lastMonthKey();ensureMonth(viewKey);startApp();maybeOnboard();
+  $('local-banner').style.display='';viewKey=DB.lastView||lastMonthKey();firstLoad=false;ensureMonth(viewKey);startApp();maybeOnboard();
 }
 function setMsg(t,cls){const m=$('au-msg');m.textContent=t;m.className='msg '+(cls||'');}
 function authErr(e){const c=(e&&e.code)||'';

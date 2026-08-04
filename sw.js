@@ -1,5 +1,5 @@
 /* Service worker de Mis Finanzas — sube el número de versión al actualizar la app */
-const CACHE = 'mis-finanzas-v20';
+const CACHE = 'mis-finanzas-v21';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
