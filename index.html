@@ -147,6 +147,11 @@
   .bar{height:20px;background:var(--panel);border-radius:11px;overflow:hidden;margin-top:10px}
   .bar>span{display:block;height:100%;border-radius:11px;transition:.5s;width:0}
   .bar.pers>span{background:linear-gradient(90deg,var(--pers),var(--pers-l))}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:10px}
+  .cal-h{text-align:center;font-size:.66rem;font-weight:700;color:var(--soft)}
+  .cal-d{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.8rem;border-radius:9px;background:var(--panel);color:var(--text)}
+  .cal-d.cal-p{background:var(--pers);color:#fff;font-weight:700;cursor:pointer}
+  .cal-due{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--deuda)}
   .pie-card{grid-column:1/-1}
   .pie-wrap{display:flex;align-items:center;gap:22px;justify-content:center;flex-wrap:wrap;padding:6px 0}
   #pie{filter:drop-shadow(0 10px 20px rgba(90,70,120,.22))}
@@ -298,11 +303,13 @@
           <div class="bar pers"><span id="p-bar"></span></div>
           <div class="note" id="p-note">Define un límite y registra tus gastos del día a día.</div>
           <div id="pers-list" style="margin-top:12px"></div>
+          <label style="margin-top:10px">Nombre corto</label>
+          <input type="text" id="p-name" placeholder="Ej: Café, Cine">
           <div class="row" style="margin-top:10px">
-            <div style="flex:1.3"><label>Nombre corto</label>
-            <input type="text" id="p-name" placeholder="Ej: Café, Cine"></div>
             <div><label>Valor</label>
             <input type="number" id="p-amt" placeholder="0" min="0" inputmode="numeric"></div>
+            <div><label>Fecha del gasto</label>
+            <input type="date" id="p-date"></div>
           </div>
           <button class="btn pers" id="p-add">＋ Agregar gasto personal</button>
         </div>
@@ -344,6 +351,15 @@
             <div class="legend" id="legend"></div>
           </div>
           <div class="note" id="pie-note" style="text-align:center"></div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <h2 id="cal-title">📅 Calendario</h2>
+          <div id="cal-body"></div>
+          <div class="note" style="margin-top:10px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:13px;height:13px;border-radius:4px;background:var(--pers);display:inline-block"></span>gasto personal</span>
+            <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:var(--deuda);display:inline-block"></span>límite de pago tarjeta</span>
+          </div>
         </div>
 
         <div style="grid-column:1/-1;margin-top:4px">
@@ -432,6 +448,7 @@ const FIREBASE_CONFIG = {
 };
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MIN_KEY='2026-01';
 const $=id=>document.getElementById(id);
 const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CO');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -541,7 +558,7 @@ const syncDebtTemplate=()=>{DB.debtTemplate=M().debts.map(d=>{const o=d.cuotasTo
 function hogarNote(){const c=M();const pend=hogarTotal()-hogarPaid(),n=c.hogar.filter(x=>!x.paid).length;$('hogar-note').innerHTML=c.hogar.length?`Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${n}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`:'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';}
 
 /* ---- render finanzas ---- */
-function renderAll(){$('mtitle').textContent=keyTitle(viewKey);render();renderInvList();}
+function renderAll(){$('mtitle').textContent=keyTitle(viewKey);const atMin=viewKey<=MIN_KEY;$('prevM').style.opacity=atMin?'.35':'1';$('prevM').style.pointerEvents=atMin?'none':'auto';render();renderInvList();}
 function render(){
   const c=M(), income=incomeStored();
   const allocated=hogarTotal()+persSpent()+c.ahorro+deudaTotal()+invPrincipalFor(viewKey);
@@ -570,7 +587,7 @@ function render(){
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
   $('p-bar').style.background=freeP<0?'linear-gradient(90deg,var(--rojo),var(--deuda))':'';
   const pl=$('pers-list');
-  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}${x.date?` <small style="color:var(--soft);font-weight:600">${x.date.split('-').reverse().join('/')}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
   pl.querySelectorAll('[data-pamt]').forEach(inp=>{inp.oninput=()=>{c.pers[+inp.dataset.pamt].amt=+inp.value||0;persist();renderTotals();};});
   pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);persist();render();});
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
@@ -600,7 +617,24 @@ function render(){
 
   $('p-limit').value=c.pLimit||'';$('ahorro').value=c.ahorro||'';
   renderInvSub();
+  renderCalendar();
   drawPie(c,income,libre);
+}
+
+/* ---- calendario del mes ---- */
+function renderCalendar(){
+  const box=$('cal-body');if(!box)return;
+  const [y,mo]=viewKey.split('-').map(Number), c=M();
+  const tt=$('cal-title');if(tt)tt.textContent='📅 Calendario de '+keyTitle(viewKey);
+  const daysIn=new Date(y,mo,0).getDate(), firstW=(new Date(y,mo-1,1).getDay()+6)%7;
+  const persDay={}; (c.pers||[]).forEach(x=>{if(x.date&&x.date.slice(0,7)===viewKey){const d=+x.date.slice(8,10);persDay[d]=(persDay[d]||0)+x.amt;}});
+  const dueDay={}; (c.debts||[]).forEach(x=>{if(x.dueDay)dueDay[x.dueDay]=true;});
+  let html='<div class="cal-grid">'+['Lu','Ma','Mi','Ju','Vi','Sa','Do'].map(d=>`<div class="cal-h">${d}</div>`).join('');
+  for(let i=0;i<firstW;i++)html+='<div></div>';
+  for(let d=1;d<=daysIn;d++){const hasP=persDay[d]!==undefined,hasD=dueDay[d];html+=`<div class="cal-d${hasP?' cal-p':''}"${hasP?` data-calday="${d}"`:''}>${d}${hasD?'<span class="cal-due"></span>':''}</div>`;}
+  html+='</div>';
+  box.innerHTML=html;
+  box.querySelectorAll('[data-calday]').forEach(el=>el.onclick=()=>{const d=+el.dataset.calday;const items=(c.pers||[]).filter(x=>x.date&&x.date.slice(0,7)===viewKey&&(+x.date.slice(8,10))===d);showToast('📅 '+d+' de '+MONTHS[mo-1]+':<br>'+items.map(x=>esc(x.name)+' — '+fmt(x.amt)).join('<br>'));});
 }
 
 /* actualiza totales/torta sin reconstruir las listas (para escribir el valor sin perder el foco) */
@@ -782,6 +816,7 @@ $('tab-dcalc').onclick=()=>{showView('dcalc');tip('tabdcalc','🧮 Calcula el co
 
 /* ---- navegación meses ---- */
 function goTo(k,dir){
+  if(k<MIN_KEY)return;
   viewKey=k;firstLoad=false;ensureMonth(k);persist();
   const app=$('app');app.classList.remove('slideL','slideR');void app.offsetWidth;app.classList.add(dir==='next'?'slideL':'slideR');
   renderAll();
@@ -842,7 +877,7 @@ $('d-ics').onclick=()=>{
 };
 $('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();tip('iadd','💵 Puedes agregar varias fuentes de ingreso (salario, freelance, extras...). Todas se suman.');};
 $('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();tip('hadd','🏠 Toca el <b>círculo</b> de un gasto cuando lo pagues, y toca su <b>valor</b> para editarlo. Se ordenan de mayor a menor solos.');};
-$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value;if(!n||!a||a<=0){alert('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a});$('p-name').value='';$('p-amt').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables. La barra te muestra cuánto te queda de tu límite.');};
+$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null;if(!n||!a||a<=0){alert('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su fecha para llevar el registro. La barra te muestra cuánto te queda del límite.');};
 $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
@@ -863,7 +898,7 @@ $('closemonth').onclick=()=>{
 function monthToText(s,key){const L=[];const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const deu=debtsSum(s);const libre=inc-(hog+perGas+(s.ahorro||0)+deu);
   L.push('  INGRESOS: '+fmt(inc));(s.incomes||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
   L.push('  HOGAR (fijos): '+fmt(hog)+'  | Pagado: '+fmt(hogPag)+'  | Pendiente: '+fmt(hog-hogPag));(s.hogar||[]).forEach(x=>L.push('    - ['+(x.paid?'PAGADO':'PENDIENTE')+'] '+x.name+': '+fmt(x.amt)));
-  L.push('  PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
+  L.push('  PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+(x.date?' ('+x.date.split('-').reverse().join('/')+')':'')+': '+fmt(x.amt)));
   L.push('  AHORRO: '+fmt(s.ahorro||0)+'   (recomendado 20%: '+fmt(inc*0.2)+')');
   L.push('  DEUDA tarjetas: '+fmt(deu));(s.debts||[]).forEach(x=>L.push('    - '+x.bank+': '+fmt(x.amt)+(x.dueDay?' (vence dia '+x.dueDay+')':'')));
   L.push('  >> LIBRE DEL MES: '+fmt(libre));return L.join('\n');}
