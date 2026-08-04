@@ -183,10 +183,10 @@
   .ob-list div{background:var(--panel);border-radius:12px;padding:10px 12px;line-height:1.4}
   .ob-list b{color:var(--title)}
   #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--card);color:var(--text);border:1.5px solid var(--border);box-shadow:var(--shadow);border-radius:14px;padding:12px 14px;max-width:360px;width:calc(100% - 32px);font-size:.85rem;line-height:1.38;opacity:0;pointer-events:none;transition:.3s;z-index:60;display:flex;align-items:center;gap:10px;text-align:left}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   #toast b{color:var(--title)}
   #toast .toast-msg{flex:1}
-  #toast .toast-x{flex-shrink:0;background:var(--panel);border:none;color:var(--soft);font-weight:800;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.95rem}
+  #toast .toast-x{flex-shrink:0;background:var(--panel);border:none;color:var(--soft);font-weight:800;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.95rem;pointer-events:auto}
 </style>
 </head>
 <body>
@@ -480,7 +480,7 @@ function invAccumValue(key){let v=0;(DB.investments||[]).forEach(inv=>{const t=m
 function invPrincipalFor(key){let v=0;(DB.investments||[]).forEach(inv=>{if(inv.start===key)v+=inv.principal;});return v;}
 
 function debtsFromTemplate(){return (DB.debtTemplate||[]).filter(d=>!(d.loan&&(d.capital||0)<=0)).map(d=>{const o=d.loan?{bank:d.bank,amt:d.amt||0,dueDay:d.dueDay,paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:d.dueDay,paid:false};if(d.manejo)o.manejo=d.manejo;return o;});}
-function blankMonth(){return{incomes:[],hogar:DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false})),pLimit:0,pers:[],ahorro:0,debts:debtsFromTemplate()};}
+function blankMonth(){return{incomes:[],hogar:[],pLimit:0,pers:[],ahorro:0,debts:[]};}
 function debtsSum(s){return (s.debts||[]).reduce((a,x)=>a+(x.amt||0)+(x.manejo||0),0);}
 // simula la amortización: cuánto falta pagar en total (con intereses) y en cuántas cuotas, si se paga 'cuota' cada mes
 function amortize(capital,cuota,im){capital=capital||0;if(capital<=0.5)return{total:0,n:0,interes:0};if(!cuota||cuota<=0)return{total:Infinity,n:Infinity,interes:Infinity};let bal=capital,total=0,n=0;while(bal>0.5&&n<2400){const it=bal*im;let pay=cuota;if(im>0&&pay<=it)return{total:Infinity,n:Infinity,interes:Infinity};if(pay>bal+it)pay=bal+it;total+=pay;bal=bal+it-pay;n++;}return{total:Math.round(total),n,interes:Math.round(total-capital)};}
@@ -488,15 +488,7 @@ function payDebt(d,amount){d._prevCapital=d.capital;d._prevAmt=d.amt;const im=d.
 function unpayDebt(d){if(d._prevCapital!==undefined){d.capital=d._prevCapital;d.amt=d._prevAmt;delete d._prevCapital;delete d._prevAmt;}d.paid=false;}
 function debtPayMsg(d,pago,fromCheck){const im=d.im||0;const now=amortize(d.capital,d.amt,im);const orig=amortize(d.capital,d.cuotaOrig||d.amt,im);const savings=Math.max(0,(isFinite(orig.interes)?orig.interes:0)-(isFinite(now.interes)?now.interes:0));let msg=`✅ Pago de <b>${fmt(pago)}</b> en ${esc(d.bank)}. Saldo con intereses <b>${isFinite(now.total)?fmt(now.total):'—'}</b>, quedan <b>${isFinite(now.n)?now.n:'∞'}</b> cuota(s).`;if(savings>0)msg+=` 💡 Si sigues pagando ${fmt(d.amt)} cada mes, terminarás en <b>${now.n}</b> cuotas y te ahorrarás <b>${fmt(savings)}</b> en intereses.`;else if(fromCheck)msg+=` 💡 Tu valor a pagar es ${fmt(d.amt)}, pero puedes tocar ＋ para hacer un avance y reducir tu deuda.`;showToast(msg);}
 function libreOf(key){const s=DB.months[key];if(!s)return 0;const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const per=(s.pers||[]).reduce((a,x)=>a+x.amt,0);return inc-(hog+per+(s.ahorro||0)+debtsSum(s)+invPrincipalFor(key));}
-function ensureMonth(k){
-  if(!DB.months[k]){
-    const m=blankMonth();
-    const pk=shiftKey(k,-1);
-    if(DB.months[pk]){const lib=libreOf(pk);if(lib>0)m.incomes.push({name:'Sobrante mes anterior',amt:Math.round(lib)});}
-    DB.months[k]=m;
-  }
-  return DB.months[k];
-}
+function ensureMonth(k){if(!DB.months[k])DB.months[k]=blankMonth();return DB.months[k];}
 const M=()=>ensureMonth(viewKey);
 
 function normMonth(m){
@@ -900,8 +892,10 @@ if(configured&&window.firebase){
       startApp();
       firebase.database().ref('users/'+uid).on('value',snap=>{
         const v=snap.val();
-        if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();applyingRemote=false;}
-        else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(DB).catch(()=>{});maybeOnboard();}
+        try{
+          if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();}
+          else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(DB).catch(()=>{});maybeOnboard();}
+        }finally{applyingRemote=false;}
       });
     }else{$('gate').style.display='flex';$('root').style.display='none';}
   });
