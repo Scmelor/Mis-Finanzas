@@ -77,6 +77,7 @@
   .month-chip .x{color:var(--muted);font-weight:700}
   .month-chip .x:hover{color:var(--rojo)}
   .saved-banner{grid-column:1/-1;background:#eef9f3;border:1.5px solid var(--aho);border-radius:14px;padding:10px 16px;text-align:center;color:#3f7a63;font-weight:600;display:none}
+  hr{margin:16px 0;border:none;border-top:1px solid #f0e8f5}
 </style>
 </head>
 <body>
@@ -119,7 +120,7 @@
         <input type="number" id="h-amt" placeholder="0" min="0"></div>
       </div>
       <button class="btn hogar" id="h-add">＋ Agregar gasto fijo</button>
-      <div class="note" id="tpl-note" style="margin-top:10px">🔁 Tus gastos fijos se guardan y reaparecen al empezar un mes nuevo.</div>
+      <div class="note" id="tpl-note" style="margin-top:10px">🔁 Tus gastos fijos reaparecen automáticamente al crear un mes nuevo.</div>
     </div>
 
     <!-- PERSONALES -->
@@ -168,18 +169,22 @@
 
     <!-- CERRAR MES -->
     <div class="card hist">
-      <h2>📁 Guardar y cerrar mes</h2>
-      <div class="row" style="align-items:flex-end">
+      <h2>📁 Cerrar mes y pasar saldo al siguiente</h2>
+      <div class="row" style="align-items:flex-end;margin-bottom:12px">
         <div><label>Año</label>
           <select id="cl-year"></select></div>
         <div><label>Mes</label>
           <select id="cl-month"></select></div>
         <div style="flex:0 0 auto"><label>&nbsp;</label>
-          <button class="btn aho" style="background:var(--aho);margin:0;padding:11px 18px;color:#fff" id="cl-save">💾 Guardar mes</button></div>
-        <div style="flex:0 0 auto"><label>&nbsp;</label>
-          <button class="mini" style="padding:11px 16px" id="cl-new">🌱 Empezar mes nuevo</button></div>
+          <button class="btn aho" style="background:var(--aho);margin:0;padding:11px 18px;color:#fff" id="cl-close-and-next">📅 Cerrar mes y continuar</button></div>
       </div>
       <div class="saved-banner" id="saved-banner"></div>
+      <hr>
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px">O si prefieres, guardar/empezar por separado:</p>
+      <div class="row">
+        <div style="flex:0 0 auto"><button class="mini" id="cl-save">💾 Solo guardar mes</button></div>
+        <div style="flex:0 0 auto"><button class="mini" id="cl-new">🌱 Solo empezar nuevo</button></div>
+      </div>
     </div>
 
     <!-- HISTORIAL -->
@@ -409,6 +414,58 @@ function fillSelectors(){
   yS.innerHTML='';for(let y=now.getFullYear()-1;y<=now.getFullYear()+1;y++)yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
   mS.innerHTML='';MONTHS.forEach((m,i)=>mS.innerHTML+=`<option ${i===now.getMonth()?'selected':''}>${m}</option>`);
 }
+
+// ✅ NUEVO BOTÓN: Cerrar mes + pasar saldo al siguiente
+$('cl-close-and-next').onclick=()=>{
+  try{
+    const y=$('cl-year').value, m=$('cl-month').value;
+    const current=C();
+    const income=incomeTotal();
+    const allocated=hogarTotal()+current.pLimit+current.ahorro+current.deuda;
+    const libre=income-allocated;
+    
+    // Guardar el mes actual
+    if(!DB.archive[y])DB.archive[y]={};
+    if(DB.archive[y][m]&&!confirm(m+' '+y+' ya existe. ¿Reemplazarlo?'))return;
+    DB.archive[y][m]=JSON.parse(JSON.stringify(current));
+    
+    // Crear mes nuevo con gastos fijos y pasar el saldo libre
+    DB.current=blank();
+    DB.current.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
+    
+    // ✅ PASAR SALDO LIBRE como ingreso si es positivo
+    if(libre>0){
+      DB.current.incomes.push({name:'Saldo del mes anterior',amt:Math.round(libre)});
+    }
+    
+    // Guardar antes de actualizar la UI
+    save();
+    
+    // Avanzar automáticamente al siguiente mes en los selectores
+    let nextMonth=MONTHS.indexOf(m)+1;
+    let nextYear=parseInt(y);
+    if(nextMonth>=12){nextMonth=0;nextYear++;}
+    $('cl-month').value=MONTHS[nextMonth];
+    $('cl-year').value=nextYear;
+    
+    syncInputs();render();renderHist();
+    
+    const b=$('saved-banner');
+    b.style.display='block';
+    if(libre>0){
+      b.innerHTML=`✅ <b>${m} ${y}</b> guardado.<br>📌 ${fmt(libre)} pasado como ingreso a <b>${MONTHS[nextMonth]} ${nextYear}</b>`;
+    } else {
+      b.innerHTML=`✅ <b>${m} ${y}</b> guardado.<br>📌 Mes nuevo iniciado: <b>${MONTHS[nextMonth]} ${nextYear}</b>`;
+    }
+    setTimeout(()=>b.style.display='none',5000);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){
+    console.error('Error al cerrar mes:',e);
+    alert('❌ Hubo un error. Abre la consola (F12) para más detalles.');
+  }
+};
+
+// Mantener los botones individuales
 $('cl-save').onclick=()=>{
   const y=$('cl-year').value,m=$('cl-month').value;
   if(!DB.archive[y])DB.archive[y]={};
