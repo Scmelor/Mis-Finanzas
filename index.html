@@ -244,7 +244,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v34</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v35</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -603,8 +603,7 @@ function render(){
   il.innerHTML=ih;
   il.querySelectorAll('[data-idel]').forEach(b=>b.onclick=()=>{c.incomes.splice(+b.dataset.idel,1);persist();render();});
 
-  const prank=x=>x.prio===1?0:x.prio===2?1:2;
-  c.hogar.sort((a,b)=>((a.paid?1:0)-(b.paid?1:0))||(prank(a)-prank(b))||(b.amt-a.amt));
+  c.hogar.sort((a,b)=>((a.paid?1:0)-(b.paid?1:0))||(b.amt-a.amt));
   const hl=$('hogar-list');
   hl.innerHTML=c.hogar.map((x,i)=>{const pr=x.prio||0,col=pr===1?'var(--rojo)':pr===2?'var(--deuda)':'var(--muted)',bc=pr?col:'transparent';return `<div class="item ${x.paid?'paid':''}" data-i="${i}" style="border-left:5px solid ${bc}"><button class="hprio" data-hprio="${i}" title="Prioridad (toca)" style="color:${col}">●</button><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-hamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-del="${i}">✕</button></div>`;}).join('');
   hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.del!==undefined||e.target.dataset.hamt!==undefined||e.target.dataset.hprio!==undefined)return;const i=+el.dataset.i;c.hogar[i].paid=!c.hogar[i].paid;if(c.hogar[i].paid)tip('hpaid','✅ Marcado como pagado. Los pagados bajan al final de la lista.');syncTemplate();persist();render();});
@@ -927,10 +926,10 @@ $('closemonth').onclick=()=>{
   try{
     const cur=M(), lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
     const nm=ensureMonth(nk);
-    // Gastos fijos: se copian del mes actual, sin marcar
-    if(!nm.hogar||nm.hogar.length===0)nm.hogar=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,paid:false,prio:h.prio||0}));
-    // Tarjetas: manuales sin valor (para rellenar); préstamos siguen con su saldo/cuotas hasta terminar
-    if(!nm.debts||nm.debts.length===0)nm.debts=(cur.debts||[]).filter(d=>!(d.cuotasTotal!==undefined&&(d.capital||0)<=0)).map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,amt:d.amt||0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false};if(d.manejo)o.manejo=d.manejo;return o;});
+    // Gastos fijos: se copian del mes actual, sin marcar (siempre)
+    if((cur.hogar||[]).length)nm.hogar=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,paid:false,prio:h.prio||0}));
+    // Tarjetas: manuales sin valor (para rellenar); préstamos siguen con su saldo/cuotas hasta terminar (siempre)
+    if((cur.debts||[]).length)nm.debts=(cur.debts||[]).filter(d=>!(d.cuotasTotal!==undefined&&(d.capital||0)<=0)).map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,amt:d.amt||0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false};if(d.manejo)o.manejo=d.manejo;return o;});
     nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
     if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
     // mantener plantillas al día por si se usan en otro lado
