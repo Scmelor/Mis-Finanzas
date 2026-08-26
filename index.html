@@ -201,6 +201,17 @@
 
 <div id="toast"></div>
 
+<div class="gate" id="modal" style="display:none;z-index:70">
+  <div class="box" style="max-width:340px">
+    <p id="modal-msg" style="color:var(--ink);font-size:.95rem;white-space:pre-line;margin-bottom:14px;text-align:left"></p>
+    <input id="modal-input" type="text" inputmode="decimal" style="display:none;margin-bottom:12px">
+    <div style="display:flex;gap:10px">
+      <button class="mini" id="modal-cancel" style="flex:1;padding:12px">Cancelar</button>
+      <button class="btn" id="modal-ok" style="flex:1;margin:0;background:linear-gradient(135deg,var(--hogar),var(--pers))">Aceptar</button>
+    </div>
+  </div>
+</div>
+
 <div class="gate" id="onboard" style="display:none">
   <div class="box" style="max-width:410px">
     <h2><img src="icon-192.png" class="logo" alt="">¡Bienvenida!</h2>
@@ -464,6 +475,14 @@ const cssVar=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
 /* ---- toasts de ayuda (primera vez que se usa cada botón) ---- */
 function showToast(msg){const t=$('toast');t.innerHTML='<span class="toast-msg">'+msg+'</span><button class="toast-x" aria-label="Cerrar">✕</button>';t.classList.add('show');t.querySelector('.toast-x').onclick=()=>t.classList.remove('show');}
 function tip(key,msg){try{const seen=JSON.parse(localStorage.getItem('tipsSeen')||'{}');if(seen[key])return;seen[key]=1;localStorage.setItem('tipsSeen',JSON.stringify(seen));}catch(e){}showToast(msg);}
+/* ventanas propias (los diálogos nativos no funcionan en la app instalada de iOS) */
+let modalResolve=null, modalMode='confirm';
+function confirmBox(msg){return new Promise(res=>{modalResolve=res;modalMode='confirm';$('modal-msg').textContent=msg;$('modal-input').style.display='none';$('modal-cancel').style.display='';$('modal').style.display='flex';});}
+function promptBox(msg,def){return new Promise(res=>{modalResolve=res;modalMode='prompt';$('modal-msg').textContent=msg;const inp=$('modal-input');inp.style.display='';inp.value=(def!=null?def:'');$('modal-cancel').style.display='';$('modal').style.display='flex';setTimeout(()=>{try{inp.focus();}catch(e){}},60);});}
+function modalDone(v){$('modal').style.display='none';const r=modalResolve;modalResolve=null;if(r)r(v);}
+document.getElementById('modal-ok').onclick=()=>modalDone(modalMode==='prompt'?$('modal-input').value:true);
+document.getElementById('modal-cancel').onclick=()=>modalDone(modalMode==='prompt'?null:false);
+document.getElementById('modal-input').onkeydown=e=>{if(e.key==='Enter')modalDone($('modal-input').value);};
 /* onboarding primera vez */
 function hasData(){if((DB.investments||[]).length)return true;for(const k in (DB.months||{})){if(monthHasData(DB.months[k]))return true;}return false;}
 function maybeOnboard(){if(onboardChecked)return;onboardChecked=true;let seen=false;try{seen=!!localStorage.getItem('onboardingDone');}catch(e){}if(DB.onboarded||seen||hasData())return;$('onboard').style.display='flex';}
@@ -605,7 +624,7 @@ function render(){
   const dl=$('deuda-list'), mesN=MONTHS[(+viewKey.split('-')[1])-1];
   const dSub=d=>{const p=[];if(d.cuotasTotal!==undefined){const info=amortize(d.capital,d.amt,d.im||0);p.push('saldo '+(isFinite(info.total)?fmt(info.total):'—'));p.push('quedan '+(isFinite(info.n)?info.n:'∞')+' cuotas pagando '+fmt(d.amt));}if(d.manejo)p.push('manejo '+fmt(d.manejo));if(d.dueDay)p.push('límite de pago '+d.dueDay+' de '+mesN);return p.length?` <small style="color:var(--soft);font-weight:600">${p.join(' · ')}</small>`:'';};
   dl.innerHTML=c.debts.length?c.debts.map((d,i)=>`<div class="item debt ${d.paid?'paid':''}" data-di="${i}" style="background:var(--deuda-bg)"><span class="check">${d.paid?'✓':''}</span><span class="nm">💳 ${esc(d.bank)}${dSub(d)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-damt="${i}" value="${d.amt||''}" placeholder="valor">${d.dueDay?'':`<input class="d-day-inline" type="number" inputmode="numeric" min="1" max="31" data-dday="${i}" value="" placeholder="día" title="Día límite de pago">`}${d.cuotasTotal!==undefined?`<button class="del" data-davance="${i}" title="Registrar pago / avance" style="color:var(--verde);font-weight:800">＋</button>`:''}<button class="del" data-ddel="${i}">✕</button></div>`).join(''):'<div class="empty">Sin tarjetas registradas 🌿</div>';
-  dl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{const tg=e.target;if(tg.dataset.ddel!==undefined||tg.dataset.damt!==undefined||tg.dataset.dday!==undefined||tg.dataset.davance!==undefined)return;const i=+el.dataset.di,d=c.debts[i];
+  dl.querySelectorAll('.item').forEach(el=>el.onclick=async e=>{const tg=e.target;if(tg.dataset.ddel!==undefined||tg.dataset.damt!==undefined||tg.dataset.dday!==undefined||tg.dataset.davance!==undefined)return;const i=+el.dataset.di,d=c.debts[i];
     if(tg.classList.contains('check')){
       if(d.cuotasTotal!==undefined){
         if(!d.paid){const pago=d.amt;payDebt(d,pago);debtPayMsg(d,pago,true);}
@@ -614,8 +633,8 @@ function render(){
       }else{d.paid=!d.paid;}
       persist();render();return;
     }
-    const v=prompt('Cuota de manejo mensual de '+d.bank+' (0 si no tiene):',d.manejo||0);if(v===null)return;const n=Math.max(0,Math.round(+v||0));if(n>0)d.manejo=n;else delete d.manejo;syncDebtTemplate();persist();render();showToast(n>0?`Cuota de manejo de <b>${fmt(n)}</b> agregada a ${esc(d.bank)}.`:`Quitaste la cuota de manejo de ${esc(d.bank)}.`);});
-  dl.querySelectorAll('[data-davance]').forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.davance,d=c.debts[i];const v=prompt('Tu cuota actual es '+fmt(d.amt)+'.\n¿Cuánto vas a pagar cada mes? Paga más para reducir tu deuda e intereses:',d.amt);if(v===null)return;const amount=Math.max(0,Math.round(+v||0));if(amount<=0)return;if(d.paid)unpayDebt(d);payDebt(d,amount);syncDebtTemplate();persist();render();debtPayMsg(d,amount,false);});
+    const v=await promptBox('Cuota de manejo mensual de '+d.bank+' (0 si no tiene):',d.manejo||0);if(v===null)return;const n=Math.max(0,Math.round(+v||0));if(n>0)d.manejo=n;else delete d.manejo;syncDebtTemplate();persist();render();showToast(n>0?`Cuota de manejo de <b>${fmt(n)}</b> agregada a ${esc(d.bank)}.`:`Quitaste la cuota de manejo de ${esc(d.bank)}.`);});
+  dl.querySelectorAll('[data-davance]').forEach(b=>b.onclick=async e=>{e.stopPropagation();const i=+b.dataset.davance,d=c.debts[i];const v=await promptBox('Tu cuota actual es '+fmt(d.amt)+'. ¿Cuánto vas a pagar cada mes? Paga más para reducir tu deuda e intereses:',d.amt);if(v===null)return;const amount=Math.max(0,Math.round(+v||0));if(amount<=0)return;if(d.paid)unpayDebt(d);payDebt(d,amount);syncDebtTemplate();persist();render();debtPayMsg(d,amount,false);});
   dl.querySelectorAll('[data-damt]').forEach(inp=>inp.oninput=()=>{c.debts[+inp.dataset.damt].amt=+inp.value||0;persist();renderTotals();});
   dl.querySelectorAll('[data-dday]').forEach(inp=>{inp.oninput=()=>{const v=Math.floor(+inp.value);c.debts[+inp.dataset.dday].dueDay=(v>=1&&v<=31)?v:null;syncDebtTemplate();persist();};inp.onchange=()=>render();});
   dl.querySelectorAll('[data-ddel]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.debts.splice(+b.dataset.ddel,1);syncDebtTemplate();persist();render();});
@@ -729,7 +748,7 @@ function renderInvList(){
       <span class="amt" style="color:var(--verde)">+${fmt(gain)}</span>
       <button class="del" data-invdel="${inv.id}">✕</button></div>`;
   }).join('');
-  box.querySelectorAll('[data-invdel]').forEach(b=>b.onclick=()=>{if(confirm('¿Quitar esta inversión? Dejará de contarse en tus finanzas.')){DB.investments=DB.investments.filter(i=>String(i.id)!==String(b.dataset.invdel));persist();renderInvList();render();}});
+  box.querySelectorAll('[data-invdel]').forEach(b=>b.onclick=async()=>{if(await confirmBox('¿Quitar esta inversión? Dejará de contarse en tus finanzas.')){DB.investments=DB.investments.filter(i=>String(i.id)!==String(b.dataset.invdel));persist();renderInvList();render();}});
 }
 function renderInvSub(){
   const box=$('inv-sub');if(!box)return;
@@ -753,19 +772,19 @@ function renderInvSub(){
 ['inv-amt','inv-ea','inv-months'].forEach(id=>$(id).oninput=renderInvCalc);
 $('inv-add').onclick=()=>{
   const {P,ea,n}=invParams();
-  if(P<=0||ea<=0||n<=0){alert('Completa valor, % E.A. y plazo 🌷');return;}
+  if(P<=0||ea<=0||n<=0){showToast('Completa valor, % E.A. y plazo 🌷');return;}
   const endDate=$('inv-enddate').value||null;
   DB.investments.push({id:Date.now(),name:$('inv-name').value.trim()||'Inversión',principal:P,ea,months:n,start:viewKey,endDate});
   $('inv-name').value='';$('inv-amt').value='';$('inv-ea').value='';$('inv-months').value='';$('inv-enddate').value='';
   renderInvCalc();renderInvList();persist();render();
-  alert('✅ Inversión agregada. Verás su ganancia mes a mes en Finanzas, dentro de Ahorro → Inversiones'+(endDate?', hasta el '+endDate.split('-').reverse().join('/')+'.':'.'));
+  showToast('✅ Inversión agregada. Verás su ganancia mes a mes en Finanzas, dentro de Ahorro → Inversiones'+(endDate?', hasta el '+endDate.split('-').reverse().join('/')+'.':'.'));
 };
 
 /* ---- comparador de deudas ---- */
 let dcOptions=[];
 $('dc-add-opt').onclick=()=>{
   const bank=$('dc-bank').value.trim(), P=+$('dc-amt').value||0, rate=+$('dc-rate').value||0, type=$('dc-type').value, n=Math.floor(+$('dc-months').value||0);
-  if(!bank||P<=0||rate<=0||n<=0){alert('Completa banco, valor, tasa y meses 🌷');return;}
+  if(!bank||P<=0||rate<=0||n<=0){showToast('Completa banco, valor, tasa y meses 🌷');return;}
   const im=type==='em'?rate/100:Math.pow(1+rate/100,1/12)-1;
   dcOptions.push({bank,P,rate,type,n,im});
   $('dc-bank').value='';$('dc-amt').value='';$('dc-rate').value='';$('dc-months').value='';
@@ -838,7 +857,7 @@ function goTo(k,dir){
   const app=$('app');app.classList.remove('slideL','slideR');void app.offsetWidth;app.classList.add(dir==='next'?'slideL':'slideR');
   renderAll();
 }
-$('periodo').onclick=()=>{const v=prompt('Tu mes va de qué día a qué día (día de corte, ej: 25). Déjalo vacío para usar el mes normal del 1 al fin:',DB.cutoffDay||'');if(v===null)return;const n=Math.floor(+v||0);if(n>=1&&n<=31)DB.cutoffDay=n;else delete DB.cutoffDay;persist();renderPeriodo();};
+$('periodo').onclick=async()=>{const v=await promptBox('Tu mes va de qué día a qué día (día de corte, ej: 25). Déjalo vacío para usar el mes normal del 1 al fin:',DB.cutoffDay||'');if(v===null)return;const n=Math.floor(+v||0);if(n>=1&&n<=31)DB.cutoffDay=n;else delete DB.cutoffDay;persist();renderAll();};
 $('prevM').onclick=()=>goTo(shiftKey(viewKey,-1),'prev');
 $('nextM').onclick=()=>goTo(shiftKey(viewKey,1),'next');
 let tsx=null,tsy=null;const appEl=$('app');
@@ -851,7 +870,7 @@ $('ahorro').oninput=e=>{M().ahorro=+e.target.value||0;persist();render();};
 $('d-add').onclick=()=>{
   const bank=$('d-bank').value.trim(),P=+$('d-amt').value,day=Math.min(31,Math.max(1,Math.floor(+$('d-day').value||0)))||null;
   const cuotas=Math.floor(+$('d-cuotas').value||0), rate=+$('d-rate').value||0;
-  if(!bank||!P||P<=0){alert('Escribe el banco y un valor válido 🌷');return;}
+  if(!bank||!P||P<=0){showToast('Escribe el banco y un valor válido 🌷');return;}
   let debt;
   if(cuotas>0){
     const im=rate/100, cuota=Math.ceil(im>0?P*im/(1-Math.pow(1+im,-cuotas)):P/cuotas);
@@ -868,7 +887,7 @@ $('d-amt').onkeydown=e=>{if(e.key==='Enter')$('d-day').focus();};
 $('d-day').onkeydown=e=>{if(e.key==='Enter')$('d-add').click();};
 $('d-ics').onclick=()=>{
   const withDay=M().debts.filter(d=>d.dueDay);
-  if(!withDay.length){alert('Agrega al menos una tarjeta con día de pago para crear los recordatorios 🌷');return;}
+  if(!withDay.length){showToast('Agrega al menos una tarjeta con día de pago para crear los recordatorios 🌷');return;}
   const icsEsc=s=>String(s).replace(/[\\;,]/g,m=>'\\'+m).replace(/\n/g,'\\n');
   const pad=n=>String(n).padStart(2,'0');
   const now=new Date();
@@ -893,23 +912,23 @@ $('d-ics').onclick=()=>{
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='pagos-tarjetas.ics';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
   tip('ics','📅 Abre el archivo descargado en tu iPhone para agregar los recordatorios. Tu calendario te avisará el día de pago a las 8 a.m.');
 };
-$('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();tip('iadd','💵 Puedes agregar varias fuentes de ingreso (salario, freelance, extras...). Todas se suman.');};
-$('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){alert('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();tip('hadd','🏠 Toca el <b>círculo</b> de un gasto cuando lo pagues, y toca su <b>valor</b> para editarlo. Se ordenan de mayor a menor solos.');};
-$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null;if(!n||!a||a<=0){alert('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su fecha para llevar el registro. La barra te muestra cuánto te queda del límite.');};
+$('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){showToast('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();tip('iadd','💵 Puedes agregar varias fuentes de ingreso (salario, freelance, extras...). Todas se suman.');};
+$('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){showToast('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();tip('hadd','🏠 Toca el <b>círculo</b> de un gasto cuando lo pagues, y toca su <b>valor</b> para editarlo. Se ordenan de mayor a menor solos.');};
+$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null;if(!n||!a||a<=0){showToast('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su fecha para llevar el registro. La barra te muestra cuánto te queda del límite.');};
 $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
-$('delmonth').onclick=()=>{if(confirm('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();}};
-$('closemonth').onclick=()=>{
+$('delmonth').onclick=async()=>{if(await confirmBox('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();showToast('Se borraron los datos de '+keyTitle(viewKey)+'.');}};
+$('closemonth').onclick=async()=>{
   const lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
-  if(!confirm('¿Cerrar '+keyTitle(viewKey)+'?\n\nTu saldo libre ('+fmt(lib)+') pasará como ingreso a '+keyTitle(nk)+', y tus gastos fijos se copiarán a ese mes.'))return;
+  if(!(await confirmBox('¿Cerrar '+keyTitle(viewKey)+'? Tu saldo libre ('+fmt(lib)+') pasará como ingreso a '+keyTitle(nk)+', y tus gastos fijos se copiarán a ese mes.')))return;
   const nm=ensureMonth(nk);
   if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
   if((!nm.debts||nm.debts.length===0)&&DB.debtTemplate.length)nm.debts=debtsFromTemplate();
   nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
   if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
   goTo(nk,'next');
-  alert('✅ Pasaste a '+keyTitle(nk)+'. Se agregó tu saldo libre y tus gastos fijos.');
+  showToast('✅ Pasaste a '+keyTitle(nk)+'. Se agregó tu saldo libre y tus gastos fijos.');
 };
 
 /* ---- exportar ---- */

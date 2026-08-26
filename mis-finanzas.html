@@ -76,16 +76,7 @@
   .month-chip:hover{background:#e9e0f7}
   .month-chip .x{color:var(--muted);font-weight:700}
   .month-chip .x:hover{color:var(--rojo)}
-  .saved-banner{grid-column:1/-1;background:#eef9f3;border:1.5px solid var(--aho);border-radius:14px;padding:10px 16px;text-align:center;color:#3f7a63;font-weight:600;display:none;margin-top:12px}
-  .saved-banner.warn{background:#fdf0e9;border-color:var(--deuda);color:#a35a33}
-  .carry-box{background:var(--aho-bg);border-radius:16px;padding:16px;margin-bottom:4px}
-  .carry-line{display:flex;justify-content:space-between;align-items:center;font-size:.88rem;padding:5px 0;color:#4a7a66}
-  .carry-line b{color:#2f6a52}
-  .carry-line.total{border-top:1.5px solid #b9dfcd;margin-top:6px;padding-top:9px;font-weight:700;font-size:.95rem}
-  .carry-line.total b{font-size:1.1rem}
-  .carry-line.total b.neg{color:var(--rojo)}
-  .confirming{background:var(--deuda)!important}
-  hr{margin:16px 0;border:none;border-top:1px solid #f0e8f5}
+  .saved-banner{grid-column:1/-1;background:#eef9f3;border:1.5px solid var(--aho);border-radius:14px;padding:10px 16px;text-align:center;color:#3f7a63;font-weight:600;display:none}
 </style>
 </head>
 <body>
@@ -128,7 +119,7 @@
         <input type="number" id="h-amt" placeholder="0" min="0"></div>
       </div>
       <button class="btn hogar" id="h-add">＋ Agregar gasto fijo</button>
-      <div class="note" id="tpl-note" style="margin-top:10px">🔁 Tus gastos fijos reaparecen automáticamente al crear un mes nuevo.</div>
+      <div class="note" id="tpl-note" style="margin-top:10px">🔁 Tus gastos fijos se guardan y reaparecen al empezar un mes nuevo.</div>
     </div>
 
     <!-- PERSONALES -->
@@ -177,34 +168,18 @@
 
     <!-- CERRAR MES -->
     <div class="card hist">
-      <h2>📁 Cerrar mes y pasar saldo al siguiente</h2>
-      <div class="row" style="align-items:flex-end;margin-bottom:12px">
-        <div><label>Estoy cerrando el año</label>
+      <h2>📁 Guardar y cerrar mes</h2>
+      <div class="row" style="align-items:flex-end">
+        <div><label>Año</label>
           <select id="cl-year"></select></div>
         <div><label>Mes</label>
           <select id="cl-month"></select></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label>
+          <button class="btn aho" style="background:var(--aho);margin:0;padding:11px 18px;color:#fff" id="cl-save">💾 Guardar mes</button></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label>
+          <button class="mini" style="padding:11px 16px" id="cl-new">🌱 Empezar mes nuevo</button></div>
       </div>
-
-      <div class="carry-box">
-        <div class="carry-line"><span>Ingresos</span><b id="cb-ing">$0</b></div>
-        <div class="carry-line"><span>− Gastos de hogar</span><b id="cb-hog">$0</b></div>
-        <div class="carry-line"><span>− Gastos personales (lo realmente gastado)</span><b id="cb-per">$0</b></div>
-        <div class="carry-line"><span>− Ahorro</span><b id="cb-aho">$0</b></div>
-        <div class="carry-line total"><span>= Saldo que pasa al siguiente mes</span><b id="cb-total">$0</b></div>
-        <label style="margin-top:12px">Puedes ajustar el monto a pasar si quieres</label>
-        <input type="number" id="carry-amt" placeholder="0">
-        <div class="note">La deuda de tarjetas no se resta aquí: es un saldo acumulado, no un gasto del mes. Se conserva tal cual en el mes nuevo.</div>
-      </div>
-
-      <button class="btn aho" style="background:var(--aho);color:#fff" id="cl-close-and-next">📅 Cerrar mes y pasar el saldo al siguiente</button>
       <div class="saved-banner" id="saved-banner"></div>
-
-      <hr>
-      <p style="font-size:.88rem;color:var(--muted);margin-bottom:12px">O si prefieres, guardar/empezar por separado:</p>
-      <div class="row">
-        <div style="flex:0 0 auto"><button class="mini" id="cl-save">💾 Solo guardar mes</button></div>
-        <div style="flex:0 0 auto"><button class="mini" id="cl-new">🌱 Solo empezar nuevo</button></div>
-      </div>
     </div>
 
     <!-- HISTORIAL -->
@@ -316,8 +291,7 @@ function render(){
   $('deuda-note').innerHTML=c.deuda>0?`Saldo pendiente en tarjetas: <b style="color:var(--rojo)">${fmt(c.deuda)}</b>`:'';
 
   drawPie(c,income,libre);
-  $('curlabel').textContent=$('cl-month').value+' '+$('cl-year').value;
-  renderCarry();
+  $('curlabel').textContent=MONTHS[new Date().getMonth()]+' '+new Date().getFullYear();
 }
 
 /* ---- TORTA ---- */
@@ -387,37 +361,18 @@ function renderHist(){
       `<span class="month-chip" data-y="${y}" data-m="${m}">📅 ${m} · libre ${fmt(monthLibre(DB.archive[y][m]))} <span class="x" data-dy="${y}" data-dm="${m}">✕</span></span>`).join('');
     return `<div class="year-blk"><h3>📆 ${y}</h3>${chips}</div>`;
   }).join('');
-  let armedLoad=null,armedDel=null;
   body.querySelectorAll('.month-chip').forEach(ch=>ch.onclick=e=>{
     if(e.target.dataset.dm!==undefined)return;
-    const key=ch.dataset.y+ch.dataset.m;
-    if(armedLoad!==key){
-      armedLoad=key;
-      banner('Toca <b>'+ch.dataset.m+' '+ch.dataset.y+'</b> otra vez para cargarlo como mes actual. Lo que tengas ahora se reemplaza.',true);
-      setTimeout(()=>{if(armedLoad===key)armedLoad=null;},6000);
-      return;
-    }
-    armedLoad=null;
-    DB.current=migrate(JSON.parse(JSON.stringify(DB.archive[ch.dataset.y][ch.dataset.m])));
-    $('cl-year').value=ch.dataset.y;$('cl-month').value=ch.dataset.m;
-    carryEdited=false;save();syncInputs();render();
-    banner('📂 Cargado <b>'+ch.dataset.m+' '+ch.dataset.y+'</b> como mes actual.');
-    window.scrollTo({top:0,behavior:'smooth'});
+    const s=DB.archive[ch.dataset.y][ch.dataset.m];
+    if(confirm('¿Cargar '+ch.dataset.m+' '+ch.dataset.y+' como mes actual? (lo de ahora se reemplaza, guárdalo antes si lo necesitas)')){
+      DB.current=migrate(JSON.parse(JSON.stringify(s)));save();syncInputs();render();window.scrollTo({top:0,behavior:'smooth'});}
   });
   body.querySelectorAll('.x').forEach(x=>x.onclick=e=>{
     e.stopPropagation();
-    const key=x.dataset.dy+x.dataset.dm;
-    if(armedDel!==key){
-      armedDel=key;
-      banner('Toca la ✕ de <b>'+x.dataset.dm+' '+x.dataset.dy+'</b> otra vez para borrarlo del historial.',true);
-      setTimeout(()=>{if(armedDel===key)armedDel=null;},6000);
-      return;
-    }
-    armedDel=null;
-    delete DB.archive[x.dataset.dy][x.dataset.dm];
-    if(!Object.keys(DB.archive[x.dataset.dy]).length)delete DB.archive[x.dataset.dy];
-    save();renderHist();
-    banner('🗑️ '+x.dataset.dm+' '+x.dataset.dy+' borrado del historial.');
+    if(confirm('¿Borrar '+x.dataset.dm+' '+x.dataset.dy+' del historial?')){
+      delete DB.archive[x.dataset.dy][x.dataset.dm];
+      if(!Object.keys(DB.archive[x.dataset.dy]).length)delete DB.archive[x.dataset.dy];
+      save();renderHist();}
   });
 }
 
@@ -451,147 +406,28 @@ $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
 /* ---- cerrar mes ---- */
 function fillSelectors(){
   const yS=$('cl-year'),mS=$('cl-month'),now=new Date();
-  // rango amplio para que nunca falle al avanzar de diciembre a enero
-  const archYears=Object.keys(DB.archive).map(Number).filter(n=>!isNaN(n));
-  const minY=Math.min(now.getFullYear()-2,...(archYears.length?archYears:[now.getFullYear()]));
-  const maxY=now.getFullYear()+5;
-  yS.innerHTML='';
-  for(let y=minY;y<=maxY;y++)yS.innerHTML+=`<option value="${y}" ${y===now.getFullYear()?'selected':''}>${y}</option>`;
-  mS.innerHTML='';
-  MONTHS.forEach((m,i)=>mS.innerHTML+=`<option value="${m}" ${i===now.getMonth()?'selected':''}>${m}</option>`);
+  yS.innerHTML='';for(let y=now.getFullYear()-1;y<=now.getFullYear()+1;y++)yS.innerHTML+=`<option ${y===now.getFullYear()?'selected':''}>${y}</option>`;
+  mS.innerHTML='';MONTHS.forEach((m,i)=>mS.innerHTML+=`<option ${i===now.getMonth()?'selected':''}>${m}</option>`);
 }
-
-// Saldo real que sobra del mes: ingresos − hogar − lo REALMENTE gastado en personales − ahorro.
-// La deuda NO se resta: es un saldo acumulado de tarjetas, no un gasto del mes.
-function carryOver(){
-  const c=C();
-  return incomeTotal()-hogarTotal()-persSpent()-(c.ahorro||0);
-}
-
-let carryEdited=false;
-function renderCarry(){
-  const c=C(),v=carryOver();
-  $('cb-ing').textContent=fmt(incomeTotal());
-  $('cb-hog').textContent='−'+fmt(hogarTotal());
-  $('cb-per').textContent='−'+fmt(persSpent());
-  $('cb-aho').textContent='−'+fmt(c.ahorro||0);
-  const t=$('cb-total');t.textContent=fmt(v);t.className=v<0?'neg':'';
-  if(!carryEdited)$('carry-amt').value=v>0?Math.round(v):0;
-}
-$('carry-amt').oninput=()=>{carryEdited=true;};
-
-/* ---- CERRAR MES Y PASAR SALDO ---- */
-function banner(html,warn){
-  const b=$('saved-banner');
-  b.className='saved-banner'+(warn?' warn':'');
-  b.style.display='block';b.innerHTML=html;
-  clearTimeout(banner._t);banner._t=setTimeout(()=>b.style.display='none',7000);
-}
-
-let pendingClose=null;
-const btnClose=$('cl-close-and-next');
-function resetCloseBtn(){
-  pendingClose=null;
-  btnClose.classList.remove('confirming');
-  btnClose.textContent='📅 Cerrar mes y pasar el saldo al siguiente';
-}
-
-btnClose.onclick=()=>{
-  try{
-    const y=$('cl-year').value, m=$('cl-month').value;
-
-    // Confirmación EN PANTALLA si el mes ya existe (confirm() se bloquea en móviles)
-    if(DB.archive[y]&&DB.archive[y][m]&&pendingClose!==y+m){
-      pendingClose=y+m;
-      btnClose.classList.add('confirming');
-      btnClose.textContent='⚠️ '+m+' '+y+' ya existe — toca otra vez para reemplazarlo';
-      banner('Ya guardaste <b>'+m+' '+y+'</b> antes. Si continúas, se reemplaza con lo que tienes ahora.',true);
-      return;
-    }
-
-    const monto=Math.max(0,Math.round(+$('carry-amt').value||0));
-    const deudaAnterior=C().deuda||0;
-
-    // 1. Archivar el mes actual
-    if(!DB.archive[y])DB.archive[y]={};
-    DB.archive[y][m]=JSON.parse(JSON.stringify(C()));
-
-    // 2. Mes nuevo: gastos fijos + deuda que sigue pendiente
-    DB.current=blank();
-    DB.current.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
-    DB.current.deuda=deudaAnterior;
-
-    // 3. Pasar el saldo como ingreso
-    if(monto>0)DB.current.incomes.push({name:'Saldo de '+m+' '+y,amt:monto});
-
-    save();
-
-    // 4. Avanzar los selectores al mes siguiente
-    let nm=MONTHS.indexOf(m)+1, ny=parseInt(y,10);
-    if(nm>11){nm=0;ny++;}
-    if(![...$('cl-year').options].some(o=>o.value===String(ny)))
-      $('cl-year').innerHTML+=`<option value="${ny}">${ny}</option>`;
-    $('cl-year').value=String(ny);
-    $('cl-month').value=MONTHS[nm];
-
-    carryEdited=false;
-    resetCloseBtn();
-    syncInputs();render();renderHist();
-
-    banner(monto>0
-      ? `✅ <b>${m} ${y}</b> archivado.<br>📌 <b>${fmt(monto)}</b> pasó como ingreso a <b>${MONTHS[nm]} ${ny}</b>.`
-      : `✅ <b>${m} ${y}</b> archivado. Empezaste <b>${MONTHS[nm]} ${ny}</b> sin saldo a favor.`);
-    window.scrollTo({top:0,behavior:'smooth'});
-  }catch(e){
-    resetCloseBtn();
-    banner('❌ Error al cerrar el mes: '+esc(e.message),true);
-  }
-};
-// si cambia el mes/año elegido, se cancela la confirmación pendiente
-$('cl-year').onchange=()=>{resetCloseBtn();render();};
-$('cl-month').onchange=()=>{resetCloseBtn();render();};
-
-// Botones individuales — también con confirmación de dos toques
-function twoStep(btn,label,warnText,action){
-  let armed=false;
-  btn.onclick=()=>{
-    if(!armed){
-      armed=true;btn.textContent='⚠️ Toca otra vez para confirmar';btn.classList.add('confirming');
-      banner(warnText,true);
-      setTimeout(()=>{armed=false;btn.textContent=label;btn.classList.remove('confirming');},6000);
-      return;
-    }
-    armed=false;btn.textContent=label;btn.classList.remove('confirming');
-    action();
-  };
-}
-
 $('cl-save').onclick=()=>{
   const y=$('cl-year').value,m=$('cl-month').value;
   if(!DB.archive[y])DB.archive[y]={};
-  const existia=!!DB.archive[y][m];
+  if(DB.archive[y][m]&&!confirm(m+' '+y+' ya existe. ¿Reemplazarlo?'))return;
   DB.archive[y][m]=JSON.parse(JSON.stringify(C()));
   save();renderHist();
-  banner((existia?'♻️ Reemplazado':'✅ Guardado')+': <b>'+m+' '+y+'</b>. Lo encuentras en el historial abajo.');
+  const b=$('saved-banner');b.style.display='block';b.textContent='✅ Guardado: '+m+' '+y+'. Lo encuentras en el historial abajo.';
+  setTimeout(()=>b.style.display='none',4000);
 };
-
-twoStep($('cl-new'),'🌱 Solo empezar nuevo',
-  'Esto borra el mes actual (los gastos fijos se conservan). Guárdalo antes si lo necesitas.',
-  ()=>{
+$('cl-new').onclick=()=>{
+  if(confirm('¿Empezar un mes nuevo? Tus gastos fijos se mantienen (sin marcar como pagados). Guarda el mes actual antes si lo necesitas.')){
     DB.current=blank();
     DB.current.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
-    carryEdited=false;save();syncInputs();render();
-    banner('🌱 Mes nuevo iniciado con tus gastos fijos.');
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
-
-twoStep($('reset'),'🗑️ Borrar TODO (mes actual e historial)',
-  'Esto borra TODO: mes actual, historial y gastos fijos. No se puede deshacer.',
-  ()=>{
-    DB={current:blank(),archive:{},fixedTemplate:[]};
-    carryEdited=false;save();syncInputs();render();renderHist();
-    banner('🗑️ Todo borrado.');
-  });
+    save();syncInputs();render();window.scrollTo({top:0,behavior:'smooth'});}
+};
+$('reset').onclick=()=>{
+  if(confirm('¿Borrar TODO incluyendo el historial y los gastos fijos guardados? Esta acción no se puede deshacer.')){
+    DB={current:blank(),archive:{},fixedTemplate:[]};save();syncInputs();render();renderHist();}
+};
 
 /* ---- exportar a texto plano ---- */
 function monthToText(s){
