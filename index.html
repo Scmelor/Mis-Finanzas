@@ -919,16 +919,17 @@ $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
 $('delmonth').onclick=async()=>{if(await confirmBox('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();showToast('Se borraron los datos de '+keyTitle(viewKey)+'.');}};
-$('closemonth').onclick=async()=>{
-  const lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
-  if(!(await confirmBox('¿Cerrar '+keyTitle(viewKey)+'? Tu saldo libre ('+fmt(lib)+') pasará como ingreso a '+keyTitle(nk)+', y tus gastos fijos se copiarán a ese mes.')))return;
-  const nm=ensureMonth(nk);
-  if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
-  if((!nm.debts||nm.debts.length===0)&&DB.debtTemplate.length)nm.debts=debtsFromTemplate();
-  nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
-  if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
-  goTo(nk,'next');
-  showToast('✅ Pasaste a '+keyTitle(nk)+'. Se agregó tu saldo libre y tus gastos fijos.');
+$('closemonth').onclick=()=>{
+  try{
+    const lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
+    const nm=ensureMonth(nk);
+    if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
+    if((!nm.debts||nm.debts.length===0)&&DB.debtTemplate.length)nm.debts=debtsFromTemplate();
+    nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
+    if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
+    goTo(nk,'next');
+    showToast('✅ Pasaste a '+keyTitle(nk)+'. Se agregó tu saldo libre y tus gastos fijos. (Puedes volver con ◀ si fue sin querer.)');
+  }catch(err){showToast('No se pudo cerrar el mes: '+(err&&err.message?err.message:err));}
 };
 
 /* ---- exportar ---- */
