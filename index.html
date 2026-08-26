@@ -243,7 +243,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v31</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v32</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -382,7 +382,7 @@
         </div>
 
         <div style="grid-column:1/-1;margin-top:4px">
-          <button class="btn" id="closemonth" style="background:var(--verde);color:#fff;font-size:1.05rem">🗓️ INICIAR MES SIGUIENTE ▶ (v31)</button>
+          <button class="btn" id="closemonth" style="background:var(--verde);color:#fff;font-size:1.05rem">🗓️ INICIAR MES SIGUIENTE ▶</button>
           <div style="text-align:center;margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
             <button class="mini" id="delmonth" style="background:var(--deuda-bg);color:var(--rojo)">🗑️ Borrar este mes</button>
@@ -523,7 +523,7 @@ function invEndText(inv){const dur=invDuration(inv);return inv.endDate?inv.endDa
 function invAccumValue(key){let v=0;(DB.investments||[]).forEach(inv=>{const t=monthsBetween(inv.start,key),dur=invDuration(inv);if(t>=0&&t<dur){const im=invMonthlyRate(inv.ea);v+=inv.principal*Math.pow(1+im,t+1);}});return v;}
 function invPrincipalFor(key){let v=0;(DB.investments||[]).forEach(inv=>{if(inv.start===key)v+=inv.principal;});return v;}
 
-function debtsFromTemplate(){return (DB.debtTemplate||[]).filter(d=>!(d.loan&&(d.capital||0)<=0)).map(d=>{const o=d.loan?{bank:d.bank,amt:d.amt||0,dueDay:d.dueDay,paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:d.dueDay,paid:false};if(d.manejo)o.manejo=d.manejo;return o;});}
+function debtsFromTemplate(){return (DB.debtTemplate||[]).filter(d=>!(d.loan&&(d.capital||0)<=0)).map(d=>{const o=d.loan?{bank:d.bank||'Tarjeta',amt:d.amt||0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal||0,im:d.im||0}:{bank:d.bank||'Tarjeta',amt:0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false};if(d.manejo)o.manejo=d.manejo;return o;});}
 function blankMonth(){return{incomes:[],hogar:[],pLimit:0,pers:[],ahorro:0,debts:[]};}
 function debtsSum(s){return (s.debts||[]).reduce((a,x)=>a+(x.amt||0)+(x.manejo||0),0);}
 // simula la amortización: cuánto falta pagar en total (con intereses) y en cuántas cuotas, si se paga 'cuota' cada mes
@@ -571,7 +571,7 @@ function migrateV2(old){
 function persist(){
   DB.lastView=viewKey;
   try{localStorage.setItem('finanzasV3',JSON.stringify(DB));localStorage.setItem('viewKeyV3',viewKey);}catch(e){}
-  if(cloud&&uid&&!applyingRemote){firebase.database().ref('users/'+uid).set(DB).catch(()=>{});}
+  if(cloud&&uid&&!applyingRemote){firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});}
 }
 
 /* ---- cálculos mes ---- */
@@ -968,7 +968,7 @@ if(configured&&window.firebase){
         const v=snap.val();
         try{
           if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();}
-          else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(DB).catch(()=>{});maybeOnboard();}
+          else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});maybeOnboard();}
         }finally{applyingRemote=false;}
       });
     }else{$('gate').style.display='flex';$('root').style.display='none';}
