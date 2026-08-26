@@ -244,7 +244,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v33</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v34</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -925,15 +925,19 @@ $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
 $('delmonth').onclick=async()=>{if(await confirmBox('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();showToast('Se borraron los datos de '+keyTitle(viewKey)+'.');}};
 $('closemonth').onclick=()=>{
   try{
-    const lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
+    const cur=M(), lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
     const nm=ensureMonth(nk);
-    if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false,prio:t.prio||0}));
-    if((!nm.debts||nm.debts.length===0)&&DB.debtTemplate.length)nm.debts=debtsFromTemplate();
+    // Gastos fijos: se copian del mes actual, sin marcar
+    if(!nm.hogar||nm.hogar.length===0)nm.hogar=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,paid:false,prio:h.prio||0}));
+    // Tarjetas: manuales sin valor (para rellenar); préstamos siguen con su saldo/cuotas hasta terminar
+    if(!nm.debts||nm.debts.length===0)nm.debts=(cur.debts||[]).filter(d=>!(d.cuotasTotal!==undefined&&(d.capital||0)<=0)).map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,amt:d.amt||0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false};if(d.manejo)o.manejo=d.manejo;return o;});
     nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
     if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
+    // mantener plantillas al día por si se usan en otro lado
+    DB.fixedTemplate=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,prio:h.prio||0}));
     goTo(nk,'next');
-    showToast('✅ Pasaste a '+keyTitle(nk)+'. Se agregó tu saldo libre y tus gastos fijos. (Puedes volver con ◀ si fue sin querer.)');
-  }catch(err){showToast('No se pudo cerrar el mes: '+(err&&err.message?err.message:err));}
+    showToast('✅ Pasaste a '+keyTitle(nk)+' con tus gastos fijos (sin marcar), tarjetas y saldo libre. (Vuelve con ◀ si fue sin querer.)');
+  }catch(err){showToast('No se pudo iniciar el mes: '+(err&&err.message?err.message:err));}
 };
 
 /* ---- exportar ---- */
