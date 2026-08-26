@@ -137,6 +137,7 @@
   .item.debt.paid .check{background:var(--deuda);border-color:var(--deuda)}
   .d-amt-inline{width:100px;flex:0 0 auto;padding:9px 8px;font-size:15px;text-align:right}
   .d-day-inline{width:52px;flex:0 0 auto;padding:9px 4px;font-size:15px;text-align:center}
+  .hprio{background:none;border:none;font-size:1.05rem;padding:0 2px 0 0;cursor:pointer;flex-shrink:0;line-height:1}
   .nm{flex:1;min-width:0;font-weight:600;font-size:.9rem;word-break:break-word}
   .amt{font-weight:700;font-size:.9rem;white-space:nowrap}
   .del{background:none;color:var(--muted);font-size:1.15rem;padding:2px 8px;border-radius:7px}
@@ -243,7 +244,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v32</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v33</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -309,7 +310,7 @@
             <input type="number" id="h-amt" placeholder="0" min="0" inputmode="numeric"></div>
           </div>
           <button class="btn hogar" id="h-add">＋ Agregar gasto fijo</button>
-          <div class="note" style="margin-top:10px">🔁 Tus gastos fijos reaparecen automáticamente al crear un mes nuevo.</div>
+          <div class="note" style="margin-top:10px">🔁 Reaparecen al iniciar un mes nuevo (sin marcar). Toca el ● para la prioridad: ⚪ normal · 🔴 obligatorio · 🟠 fluctuante.</div>
         </div>
 
         <div class="card pers">
@@ -381,9 +382,9 @@
           </div>
         </div>
 
-        <div style="grid-column:1/-1;margin-top:4px">
-          <button class="btn" id="closemonth" style="background:var(--verde);color:#fff;font-size:1.05rem">🗓️ INICIAR MES SIGUIENTE ▶</button>
-          <div style="text-align:center;margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <div style="grid-column:1/-1;margin-top:4px;text-align:center">
+          <button class="mini" id="closemonth" style="background:var(--aho-bg);color:var(--aho);border:1.5px solid var(--aho);font-weight:700">🗓️ Iniciar mes siguiente</button>
+          <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
             <button class="mini" id="delmonth" style="background:var(--deuda-bg);color:var(--rojo)">🗑️ Borrar este mes</button>
           </div>
@@ -580,12 +581,12 @@ const hogarTotal=()=>M().hogar.reduce((s,x)=>s+x.amt,0);
 const hogarPaid=()=>M().hogar.filter(x=>x.paid).reduce((s,x)=>s+x.amt,0);
 const persSpent=()=>M().pers.reduce((s,x)=>s+x.amt,0);
 const deudaTotal=()=>debtsSum(M());
-const syncTemplate=()=>{DB.fixedTemplate=M().hogar.map(x=>({name:x.name,amt:x.amt}));};
+const syncTemplate=()=>{DB.fixedTemplate=M().hogar.map(x=>({name:x.name,amt:x.amt,prio:x.prio||0}));};
 const syncDebtTemplate=()=>{DB.debtTemplate=M().debts.map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,dueDay:d.dueDay,amt:d.amt,capital:d.capital,cuotaOrig:d.cuotaOrig,cuotasTotal:d.cuotasTotal,im:d.im||0,loan:true}:{bank:d.bank,dueDay:d.dueDay};if(d.manejo)o.manejo=d.manejo;return o;});};
 function hogarNote(){const c=M();const pend=hogarTotal()-hogarPaid(),n=c.hogar.filter(x=>!x.paid).length;$('hogar-note').innerHTML=c.hogar.length?`Pagado <b>${fmt(hogarPaid())}</b> · Faltan <b>${n}</b> por pagar: <b style="color:var(--rojo)">${fmt(pend)}</b>`:'Agrega tus gastos fijos. Toca cada uno cuando lo pagues. 🌷';}
 
 /* ---- render finanzas ---- */
-function renderAll(){$('mtitle').textContent=keyTitle(viewKey);const atMin=viewKey<=MIN_KEY;$('prevM').style.opacity=atMin?'.35':'1';$('prevM').style.pointerEvents=atMin?'none':'auto';render();renderInvList();renderPeriodo();}
+function renderAll(){$('mtitle').textContent=keyTitle(viewKey);const atMin=viewKey<=MIN_KEY;$('prevM').style.opacity=atMin?'.35':'1';$('prevM').style.pointerEvents=atMin?'none':'auto';const cm=$('closemonth');if(cm)cm.textContent='🗓️ Iniciar '+keyTitle(shiftKey(viewKey,1));render();renderInvList();renderPeriodo();}
 function render(){
   const c=M(), income=incomeStored();
   const allocated=hogarTotal()+persSpent()+c.ahorro+deudaTotal()+invPrincipalFor(viewKey);
@@ -602,10 +603,12 @@ function render(){
   il.innerHTML=ih;
   il.querySelectorAll('[data-idel]').forEach(b=>b.onclick=()=>{c.incomes.splice(+b.dataset.idel,1);persist();render();});
 
-  c.hogar.sort((a,b)=>((a.paid?1:0)-(b.paid?1:0))||(b.amt-a.amt));
+  const prank=x=>x.prio===1?0:x.prio===2?1:2;
+  c.hogar.sort((a,b)=>((a.paid?1:0)-(b.paid?1:0))||(prank(a)-prank(b))||(b.amt-a.amt));
   const hl=$('hogar-list');
-  hl.innerHTML=c.hogar.map((x,i)=>`<div class="item ${x.paid?'paid':''}" data-i="${i}"><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-hamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-del="${i}">✕</button></div>`).join('');
-  hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.del!==undefined||e.target.dataset.hamt!==undefined)return;const i=+el.dataset.i;c.hogar[i].paid=!c.hogar[i].paid;if(c.hogar[i].paid)tip('hpaid','✅ Marcado como pagado. Los pagados bajan al final de la lista.');syncTemplate();persist();render();});
+  hl.innerHTML=c.hogar.map((x,i)=>{const pr=x.prio||0,col=pr===1?'var(--rojo)':pr===2?'var(--deuda)':'var(--muted)',bc=pr?col:'transparent';return `<div class="item ${x.paid?'paid':''}" data-i="${i}" style="border-left:5px solid ${bc}"><button class="hprio" data-hprio="${i}" title="Prioridad (toca)" style="color:${col}">●</button><span class="check">${x.paid?'✓':''}</span><span class="nm">${esc(x.name)}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-hamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-del="${i}">✕</button></div>`;}).join('');
+  hl.querySelectorAll('.item').forEach(el=>el.onclick=e=>{if(e.target.dataset.del!==undefined||e.target.dataset.hamt!==undefined||e.target.dataset.hprio!==undefined)return;const i=+el.dataset.i;c.hogar[i].paid=!c.hogar[i].paid;if(c.hogar[i].paid)tip('hpaid','✅ Marcado como pagado. Los pagados bajan al final de la lista.');syncTemplate();persist();render();});
+  hl.querySelectorAll('[data-hprio]').forEach(b=>b.onclick=e=>{e.stopPropagation();const i=+b.dataset.hprio;c.hogar[i].prio=((c.hogar[i].prio||0)+1)%3;syncTemplate();persist();render();showToast('Prioridad: '+['⚪ normal','🔴 obligatorio','🟠 fluctuante'][c.hogar[i].prio]);});
   hl.querySelectorAll('[data-hamt]').forEach(inp=>{inp.oninput=()=>{c.hogar[+inp.dataset.hamt].amt=+inp.value||0;syncTemplate();persist();renderTotals();};inp.onchange=()=>{persist();render();};});
   hl.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();c.hogar.splice(+b.dataset.del,1);syncTemplate();persist();render();});
   hogarNote();
@@ -924,7 +927,7 @@ $('closemonth').onclick=()=>{
   try{
     const lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
     const nm=ensureMonth(nk);
-    if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false}));
+    if((!nm.hogar||nm.hogar.length===0)&&DB.fixedTemplate.length)nm.hogar=DB.fixedTemplate.map(t=>({name:t.name,amt:t.amt,paid:false,prio:t.prio||0}));
     if((!nm.debts||nm.debts.length===0)&&DB.debtTemplate.length)nm.debts=debtsFromTemplate();
     nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior');
     if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
