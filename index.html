@@ -110,7 +110,9 @@
   label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px;font-weight:600}
   input,select{width:100%;padding:12px 13px;border:2px solid var(--border);border-radius:13px;font-size:16px;background:var(--field);color:var(--text);outline:none;transition:.2s}
   input:focus,select:focus{border-color:var(--pers);background:var(--card)}
-  .row{display:flex;gap:10px}.row>*{flex:1}
+  .row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+  .row input,.row select{width:100%;min-width:0;box-sizing:border-box}
+  input[type=date]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none}
   button{cursor:pointer;border:none;font-weight:700;transition:.2s;font-size:.92rem}
   .btn{width:100%;padding:13px;border-radius:13px;color:#fff;margin-top:12px}
   .btn.ing{background:var(--ing)}.btn.hogar{background:var(--hogar)}.btn.pers{background:var(--pers)}.btn.deuda{background:var(--deuda)}
@@ -244,7 +246,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v37</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v38</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -498,6 +500,7 @@ function todayKey(){const n=new Date();return n.getFullYear()+'-'+String(n.getMo
 function monthHasData(m){return !!m&&((m.incomes&&m.incomes.length)||(m.hogar&&m.hogar.length)||(m.pers&&m.pers.length)||(m.debts&&m.debts.length)||m.ahorro||m.pLimit);}
 function lastMonthKey(){const ks=Object.keys(DB.months||{}).filter(k=>monthHasData(DB.months[k])).sort();return ks.length?ks[ks.length-1]:todayKey();}
 function keyTitle(k){const[y,m]=k.split('-');return MONTHS[(+m)-1]+' '+y;}
+function pBarColor(pct){pct=Math.max(0,Math.min(120,pct||0));const h=Math.max(0,130-1.3*pct);return 'linear-gradient(90deg,hsl('+h+',62%,52%),hsl('+Math.max(0,h-14)+',70%,45%))';}
 function shiftKey(k,d){let[y,m]=k.split('-').map(Number);m+=d;while(m<1){m+=12;y--;}while(m>12){m-=12;y++;}return y+'-'+String(m).padStart(2,'0');}
 function monthsBetween(a,b){const[ya,ma]=a.split('-').map(Number),[yb,mb]=b.split('-').map(Number);return (yb-ya)*12+(mb-ma);}
 
@@ -614,7 +617,7 @@ function render(){
 
   const spent=persSpent(), freeP=c.pLimit-spent;
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
-  $('p-bar').style.background=freeP<0?'linear-gradient(90deg,var(--rojo),var(--deuda))':'';
+  $('p-bar').style.background=pBarColor(c.pLimit>0?spent/c.pLimit*100:0);
   const pl=$('pers-list');
   pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}${x.date?` <small style="color:var(--soft);font-weight:600">${x.date.split('-').reverse().join('/')}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
   pl.querySelectorAll('[data-pamt]').forEach(inp=>{inp.oninput=()=>{c.pers[+inp.dataset.pamt].amt=+inp.value||0;persist();renderTotals();};});
@@ -686,7 +689,7 @@ function renderTotals(){
   $('deuda-note').innerHTML=c.debts.length?`Cuotas del mes: <b style="color:var(--rojo)">${fmt(deudaTotal())}</b> · Pagado <b style="color:var(--verde)">${fmt(dPaid)}</b> · Faltan <b>${dPend}</b>${dSaldo>0?` · Saldo pendiente <b style="color:var(--rojo)">${fmt(dSaldo)}</b>`:''}`:'';
   const spent=persSpent(), freeP=c.pLimit-spent;
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
-  $('p-bar').style.background=freeP<0?'linear-gradient(90deg,var(--rojo),var(--deuda))':'';
+  $('p-bar').style.background=pBarColor(c.pLimit>0?spent/c.pLimit*100:0);
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
   hogarNote();
   drawPie(c,income,libre);
@@ -940,16 +943,19 @@ $('closemonth').onclick=()=>{
 };
 
 /* ---- exportar ---- */
-function monthToText(s,key){const L=[];const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const deu=debtsSum(s);const libre=inc-(hog+perGas+(s.ahorro||0)+deu);
+function monthToText(s,key){const L=[];const PRIO={1:'[OBLIGATORIO] ',2:'[FLUCTUANTE] '};const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const deu=debtsSum(s);const libre=inc-(hog+perGas+(s.ahorro||0)+deu);const den=inc>0?inc:1;const pc=v=>Math.round(v/den*100)+'%';
   L.push('  INGRESOS: '+fmt(inc));(s.incomes||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
-  L.push('  HOGAR (fijos): '+fmt(hog)+'  | Pagado: '+fmt(hogPag)+'  | Pendiente: '+fmt(hog-hogPag));(s.hogar||[]).forEach(x=>L.push('    - ['+(x.paid?'PAGADO':'PENDIENTE')+'] '+x.name+': '+fmt(x.amt)));
-  L.push('  PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+(x.date?' ('+x.date.split('-').reverse().join('/')+')':'')+': '+fmt(x.amt)));
+  L.push('  HOGAR (gastos fijos): '+fmt(hog)+'  | Pagado: '+fmt(hogPag)+'  | Pendiente: '+fmt(hog-hogPag));(s.hogar||[]).forEach(x=>L.push('    - ['+(x.paid?'PAGADO':'PENDIENTE')+'] '+(PRIO[x.prio]||'')+x.name+': '+fmt(x.amt)));
+  L.push('  GASTOS PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas)+'  | Disponible: '+fmt((s.pLimit||0)-perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+(x.date?' ('+x.date.split('-').reverse().join('/')+')':'')+': '+fmt(x.amt)));
   L.push('  AHORRO: '+fmt(s.ahorro||0)+'   (recomendado 20%: '+fmt(inc*0.2)+')');
-  L.push('  DEUDA tarjetas: '+fmt(deu));(s.debts||[]).forEach(x=>L.push('    - '+x.bank+': '+fmt(x.amt)+(x.dueDay?' (vence dia '+x.dueDay+')':'')));
+  L.push('  TARJETAS DE CREDITO: '+fmt(deu));(s.debts||[]).forEach(x=>{let e='';if(x.dueDay)e+=' (vence dia '+x.dueDay+')';if(x.cuotasTotal!==undefined){const inf=amortize(x.capital,x.amt,x.im||0);e+=' [cuota '+fmt(x.amt)+' · saldo '+(isFinite(inf.total)?fmt(inf.total):'—')+' · quedan '+(isFinite(inf.n)?inf.n:'∞')+' de '+x.cuotasTotal+' cuotas]';}if(x.manejo)e+=' (manejo '+fmt(x.manejo)+')';L.push('    - '+x.bank+': '+fmt((x.amt||0)+(x.manejo||0))+e);});
+  L.push('  DISTRIBUCION (% de ingresos): Hogar '+pc(hog)+', Personales '+pc(perGas)+', Ahorro '+pc(s.ahorro||0)+', Tarjetas '+pc(deu)+', Libre '+pc(libre>0?libre:0));
   L.push('  >> LIBRE DEL MES: '+fmt(libre));return L.join('\n');}
 $('export').onclick=()=>{
   const now=new Date();let t='===== MIS FINANZAS =====\nExportado: '+now.toLocaleDateString('es-CO')+' '+now.toLocaleTimeString('es-CO')+'\n';
-  Object.keys(DB.months).sort().reverse().forEach(k=>{t+='\n['+keyTitle(k)+']\n'+monthToText(DB.months[k],k)+'\n';});
+  const meses=Object.keys(DB.months).filter(k=>monthHasData(DB.months[k])).sort().reverse();
+  if(!meses.length)t+='\n(Aun no hay meses con datos registrados)\n';
+  meses.forEach(k=>{t+='\n['+keyTitle(k)+']\n'+monthToText(DB.months[k],k)+'\n';});
   if(DB.investments.length){t+='\n===== INVERSIONES =====\n';DB.investments.forEach(inv=>{const im=invMonthlyRate(inv.ea),FV=inv.principal*Math.pow(1+im,inv.months);t+='- '+inv.name+': '+fmt(inv.principal)+' al '+inv.ea+'% E.A. x '+inv.months+' meses (desde '+keyTitle(inv.start)+') -> ganancia '+fmt(FV-inv.principal)+'\n';});}
   t+='\n----- RESPALDO -----\nDATA:'+JSON.stringify(DB);
   const blob=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mis-finanzas-'+now.toISOString().slice(0,10)+'.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
