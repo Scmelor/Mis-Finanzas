@@ -1,91 +1,76 @@
 # 🌸 Mis Finanzas
 
-App web para controlar tus finanzas personales (en pesos colombianos), con diseño pastel y responsive. Navegación por meses tipo slider, gráfica de distribución de ingresos y sincronización en la nube con inicio de sesión.
+**App web progresiva (PWA) para organizar las finanzas personales mes a mes**, con inicio de sesión y sincronización en tiempo real entre celular y computador.
 
-## Funciones
+🔗 **Demo:** [scmelor.github.io/Mis-Finanzas](https://scmelor.github.io/Mis-Finanzas/)
+🔑 **Cuenta de prueba:** `demo@misfinanzas.app` · contraseña `Demo2026!` *(datos ficticios, puedes editarlos)*
 
-- **Navegación por meses:** flechas ◀ ▶ y deslizar (swipe) para moverte entre meses. El título arriba muestra el mes.
-- **Ingresos** con varias fuentes y su categoría.
-- **Hogar (gastos fijos):** se marcan como pagados y reaparecen cada mes nuevo automáticamente.
-- **Personales:** límite mensual + registro de gastos reales.
-- **Ahorro** con recomendación del 20% de tus ingresos.
-- **Deuda** de tarjetas.
-- **Torta:** distribución de tus ingresos usando el **gasto real** de cada categoría.
-- **Exportar .txt** de respaldo.
-- **Sincronización entre dispositivos** con login (correo y contraseña).
+<p align="center">
+  <img src="docs/finanzas.png" alt="Vista principal" width="32%">
+  <img src="docs/inversiones.png" alt="Calculadora de inversiones" width="32%">
+  <img src="docs/movil.png" alt="Vista en celular" width="32%">
+</p>
 
-## Cómo activar la sincronización (Firebase) — paso a paso
+---
 
-Sin esto, la app funciona en "modo local" (solo en el dispositivo donde la abres). Para verla igual en el celular y el computador:
+## ✨ Funcionalidades
 
-### 1. Crear el proyecto
-1. Entra a https://console.firebase.google.com e inicia con tu cuenta de Google.
-2. **Agregar proyecto** → ponle un nombre (ej: `mis-finanzas`) → puedes desactivar Google Analytics → **Crear proyecto**.
+- **Navegación por meses** tipo *slider* (flechas o deslizando) con periodo configurable (ej. del 25 al 25).
+- **Ingresos** con varias fuentes y categorías.
+- **Gastos del hogar** (fijos) que se marcan como pagados y se trasladan solos al mes siguiente.
+- **Gastos personales** con límite mensual y registro de gasto real.
+- **Ahorro** con recomendación automática del 20 % de los ingresos.
+- **Deudas de tarjetas** y **calculadora de deudas** (costo total y conversión de tasas).
+- **Calculadora de inversiones** que suma la ganancia a tus finanzas.
+- **Cierre de mes**: pasa el saldo libre y los gastos fijos al mes siguiente.
+- **Gráfica de torta** con la distribución real de los ingresos.
+- **3 temas visuales** y ayudas contextuales la primera vez que usas cada botón.
+- **Exportación** de respaldo en `.txt`.
+- **Widgets para iPhone** (Scriptable) que muestran el saldo libre del mes.
 
-### 2. Activar el inicio de sesión
-1. En el menú izquierdo: **Compilación → Authentication → Comenzar**.
-2. Pestaña **Sign-in method** → habilita **Correo electrónico/Contraseña** → **Guardar**.
+## 🛠️ Tecnologías
 
-### 3. Crear la base de datos en tiempo real
-1. Menú izquierdo: **Compilación → Realtime Database → Crear base de datos**.
-2. Elige la ubicación → empieza en **modo bloqueado (locked)** → **Habilitar**.
-3. Ve a la pestaña **Reglas (Rules)** y pega exactamente esto, luego **Publicar**:
+| Área | Herramientas |
+|---|---|
+| Frontend | HTML5, CSS3, JavaScript (ES6+), sin frameworks |
+| Backend como servicio | Firebase Authentication (correo/contraseña) y Realtime Database |
+| PWA | Web App Manifest y Service Worker (instalable, funciona sin conexión) |
+| Despliegue | GitHub Pages |
+
+## 🔐 Seguridad
+
+Cada usuario solo puede leer y escribir **sus propios datos**. Lo garantizan las reglas de Realtime Database ([`database.rules.json`](database.rules.json)):
 
 ```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
-      }
-    }
-  }
-}
+"users": { "$uid": {
+  ".read":  "auth != null && auth.uid === $uid",
+  ".write": "auth != null && auth.uid === $uid"
+}}
 ```
 
-Esto hace que **cada persona solo pueda ver y editar sus propios datos**. Es lo que mantiene tu información segura aunque el repositorio sea público.
+> La configuración web de Firebase que aparece en `index.html` no es secreta: identifica el proyecto. La protección de los datos está en las reglas y en la autenticación.
 
-### 4. Obtener tus claves (config)
-1. Icono de engranaje ⚙️ (arriba izq.) → **Configuración del proyecto**.
-2. Baja hasta **Tus apps** → toca el icono **</>** (Web) → registra la app con cualquier apodo.
-3. Firebase te muestra un bloque `const firebaseConfig = { ... }`. Copia los valores.
+## 🧠 Qué aprendí
 
-### 5. Pegar las claves en el archivo
-1. Abre `index.html` y busca al inicio del `<script>` el bloque:
+- Diseñar el **modelo de datos por usuario** en una base NoSQL en tiempo real.
+- Implementar **autenticación** y proteger datos con **reglas de seguridad** del lado del servidor.
+- Convertir una app web en **PWA**: caché con Service Worker, versionado y actualización automática.
+- Diseñar una interfaz **mobile-first** con gestos (deslizar) y varios temas.
 
-```js
-const FIREBASE_CONFIG = {
-  apiKey: "PEGA_TU_API_KEY",
-  authDomain: "PEGA_TU_PROYECTO.firebaseapp.com",
-  databaseURL: "https://PEGA_TU_PROYECTO-default-rtdb.firebaseio.com",
-  projectId: "PEGA_TU_PROYECTO",
-  appId: "PEGA_TU_APP_ID"
-};
-```
+## 🚀 Ejecutar tu propia copia
 
-2. Reemplaza cada valor `PEGA_...` por el tuyo. **Importante:** el `databaseURL` debe ser el de tu Realtime Database (aparece en esa sección, termina en `.firebaseio.com`). Si tu config de la web no lo trae, cópialo desde **Realtime Database**.
+1. Haz un *fork* o descarga el repositorio.
+2. Crea un proyecto en [Firebase](https://console.firebase.google.com) y activa **Authentication → Correo/Contraseña** y **Realtime Database**.
+3. En Realtime Database → **Reglas**, pega el contenido de `database.rules.json` y publica.
+4. En `index.html`, reemplaza el objeto `FIREBASE_CONFIG` por la configuración web de tu proyecto.
+5. Activa **GitHub Pages** (Settings → Pages → `main` / root).
+6. Al actualizar `index.html`, sube la versión de `CACHE` en `sw.js` para que la app instalada tome los cambios.
 
-### 6. Subir el cambio a GitHub
-1. En tu repo, entra a `index.html` → icono del lápiz ✏️ → pega el archivo actualizado → **Commit changes**.
-2. Espera ~1 minuto y abre tu link. Ahora te pedirá **crear cuenta / iniciar sesión**.
-3. Usa el mismo correo y contraseña en el celular y en el computador: verás la misma información y se actualiza sola. 🎉
+### Instalar en el celular
 
-## Nota de seguridad
+- **Android (Chrome):** menú ⋮ → *Instalar aplicación*.
+- **iPhone (Safari):** Compartir → *Agregar a inicio*.
 
-Las claves de Firebase en el código son normales y no son secretas por sí solas: lo que protege tus datos son las **reglas** del paso 3 y tu **contraseña**. Usa una contraseña que no repitas en otros sitios.
+---
 
-## Instalar en el celular (app / PWA)
-
-La app se puede instalar como una aplicación (ícono propio, pantalla completa y funciona sin internet). Para eso el repositorio debe tener estos archivos, todos en la raíz:
-
-`index.html`, `manifest.json`, `sw.js`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`.
-
-Sube los que falten con **Add file → Upload files → Commit changes**. Luego:
-
-- **Android (Chrome):** abre tu link, aparecerá "Instalar app" (o menú ⋮ → Instalar aplicación / Agregar a pantalla de inicio).
-- **iPhone (Safari):** abre tu link → botón compartir → **Agregar a inicio**.
-
-Queda un ícono como el de cualquier app. Al abrirla se ve a pantalla completa y, si no tienes señal, muestra lo último guardado.
-
-Cada vez que actualices `index.html`, sube también el número de versión en `sw.js` (`mis-finanzas-v1` → `v2`, etc.) para que la app tome los cambios.
+Desarrollado por **Silvia Melo** · [github.com/Scmelor](https://github.com/Scmelor)
