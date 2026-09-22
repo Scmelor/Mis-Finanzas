@@ -6,9 +6,9 @@
 🔑 **Cuenta de prueba:** `demo@misfinanzas.app` · contraseña `Demo2026!` *(datos ficticios, puedes editarlos)*
 
 <p align="center">
-  <img src="docs/finanzas.png" alt="Vista principal" width="32%">
-  <img src="docs/inversiones.png" alt="Calculadora de inversiones" width="32%">
-  <img src="docs/movil.png" alt="Vista en celular" width="32%">
+  <img src="finanzas.PNG" alt="Vista principal" width="32%">
+  <img src="inversiones.PNG" alt="Calculadora de inversiones" width="32%">
+  <img src="movil.PNG" alt="Vista en celular" width="32%">
 </p>
 
 ---
