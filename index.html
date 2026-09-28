@@ -246,7 +246,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v38</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v39</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -388,8 +388,10 @@
           <button class="mini" id="closemonth" style="background:var(--aho-bg);color:var(--aho);border:1.5px solid var(--aho);font-weight:700">🗓️ Iniciar mes siguiente</button>
           <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
             <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
-            <button class="mini" id="delmonth" style="background:var(--deuda-bg);color:var(--rojo)">🗑️ Borrar este mes</button>
+            <button class="mini" id="recover" style="background:var(--aho-bg);color:var(--aho)">♻️ Recuperar copia</button>
+            <button class="mini" id="restorefile" style="background:var(--ing-bg);color:var(--ing)">📂 Restaurar desde .txt</button>
           </div>
+          <input type="file" id="restore-input" accept=".txt,text/plain" style="display:none">
         </div>
       </div>
     </div>
@@ -572,10 +574,12 @@ function migrateV2(old){
   if(old.current)months[todayKey()]=normMonth(old.current);
   return {months,fixedTemplate:old.fixedTemplate||[],investments:[],debtTemplate:[]};
 }
+let _lastBk=0;
 function persist(){
   DB.lastView=viewKey;
   try{localStorage.setItem('finanzasV3',JSON.stringify(DB));localStorage.setItem('viewKeyV3',viewKey);}catch(e){}
   if(cloud&&uid&&!applyingRemote){firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});}
+  const now=Date.now();if(!applyingRemote&&now-_lastBk>20000){_lastBk=now;try{saveLocalBackup();}catch(e){}}
 }
 
 /* ---- cálculos mes ---- */
@@ -871,8 +875,10 @@ appEl.addEventListener('touchstart',e=>{tsx=e.changedTouches[0].clientX;tsy=e.ch
 appEl.addEventListener('touchend',e=>{if(tsx===null)return;const dx=e.changedTouches[0].clientX-tsx,dy=e.changedTouches[0].clientY-tsy;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5){if(dx<0)goTo(shiftKey(viewKey,1),'next');else goTo(shiftKey(viewKey,-1),'prev');}tsx=null;},{passive:true});
 
 /* ---- inputs finanzas ---- */
-$('p-limit').oninput=e=>{M().pLimit=+e.target.value||0;persist();render();};
-$('ahorro').oninput=e=>{M().ahorro=+e.target.value||0;persist();render();};
+$('p-limit').oninput=e=>{M().pLimit=+e.target.value||0;persist();renderTotals();};
+$('p-limit').onchange=()=>render();
+$('ahorro').oninput=e=>{M().ahorro=+e.target.value||0;persist();renderTotals();};
+$('ahorro').onchange=()=>render();
 $('d-add').onclick=()=>{
   const bank=$('d-bank').value.trim(),P=+$('d-amt').value,day=Math.min(31,Math.max(1,Math.floor(+$('d-day').value||0)))||null;
   const cuotas=Math.floor(+$('d-cuotas').value||0), rate=+$('d-rate').value||0;
@@ -924,7 +930,28 @@ $('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=
 $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
-$('delmonth').onclick=async()=>{if(await confirmBox('¿Borrar los datos de '+keyTitle(viewKey)+'?')){delete DB.months[viewKey];ensureMonth(viewKey);persist();render();showToast('Se borraron los datos de '+keyTitle(viewKey)+'.');}};
+/* ---- copias de seguridad automáticas ---- */
+function snapData(){return JSON.parse(JSON.stringify(DB));}
+function localBackups(){try{return JSON.parse(localStorage.getItem('finzBackups')||'[]');}catch(e){return[];}}
+function nMonths(d){try{return Object.keys(d.months||{}).filter(k=>monthHasData(d.months[k])).length;}catch(e){return 0;}}
+function saveLocalBackup(data){try{const arr=localBackups();const snap=data||snapData();const s=JSON.stringify(snap);const last=arr[arr.length-1];if(last&&JSON.stringify(last.data)===s)return;if(nMonths(snap)===0&&arr.length)return;arr.push({t:Date.now(),data:snap});while(arr.length>10)arr.shift();localStorage.setItem('finzBackups',JSON.stringify(arr));}catch(e){}}
+function cloudBackup(data){if(!(cloud&&uid&&window.firebase))return;const snap=data||snapData();if(nMonths(snap)===0)return;const today=new Date().toISOString().slice(0,10);let last='';try{last=localStorage.getItem('finzCloudBkDate')||'';}catch(e){}if(last===today)return;try{localStorage.setItem('finzCloudBkDate',today);}catch(e){}const ref=firebase.database().ref('backups/'+uid);ref.child(today).set({t:Date.now(),data:JSON.parse(JSON.stringify(snap))}).then(()=>{ref.once('value',s=>{const v=s.val()||{};const keys=Object.keys(v).sort();while(keys.length>21){const k=keys.shift();ref.child(k).remove();}});}).catch(()=>{});}
+async function restoreFlow(){
+  const opts=[];
+  localBackups().slice().reverse().forEach(b=>opts.push({t:b.t,data:b.data,src:'este dispositivo'}));
+  if(cloud&&uid&&window.firebase){try{const s=await firebase.database().ref('backups/'+uid).once('value');const v=s.val()||{};Object.keys(v).sort().reverse().forEach(k=>{if(v[k]&&v[k].data)opts.push({t:v[k].t||Date.parse(k),data:v[k].data,src:'nube ('+k+')'});});}catch(e){}}
+  if(!opts.length){showToast('Aún no hay copias automáticas guardadas. Si tienes un archivo .txt exportado, usa “Restaurar desde .txt”.');return;}
+  const lines=opts.map((o,i)=>(i+1)+') '+new Date(o.t).toLocaleDateString('es-CO')+' '+new Date(o.t).toLocaleTimeString('es-CO').slice(0,5)+' — '+nMonths(o.data)+' meses · '+o.src);
+  $('modal-msg').style.whiteSpace='pre-wrap';
+  const pick=await promptBox('Copias disponibles. Escribe el número que quieres restaurar:\n\n'+lines.join('\n'),'1');
+  $('modal-msg').style.whiteSpace='';
+  if(pick===null)return;const idx=Math.floor(+pick)-1;if(!(idx>=0&&idx<opts.length)){showToast('Ese número no está en la lista.');return;}
+  if(!(await confirmBox('¿Restaurar la copia del '+new Date(opts[idx].t).toLocaleDateString('es-CO')+' con '+nMonths(opts[idx].data)+' meses? Se guardará antes una copia de lo que tienes ahora.')))return;
+  saveLocalBackup();DB=opts[idx].data;normDB();viewKey=DB.lastView||lastMonthKey();ensureMonth(viewKey);persist();renderAll();showToast('Datos restaurados ✅');
+}
+$('recover').onclick=restoreFlow;
+$('restorefile').onclick=()=>$('restore-input').click();
+$('restore-input').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const txt=String(r.result||'');const i=txt.indexOf('DATA:');if(i<0){showToast('Ese archivo no tiene una copia de datos. Usa un .txt exportado desde la app.');return;}const data=JSON.parse(txt.slice(i+5));if(!data||typeof data!=='object'||!data.months){showToast('No se pudo leer la copia del archivo.');return;}if(!(await confirmBox('El archivo tiene '+nMonths(data)+' meses. ¿Restaurar estos datos? Se guardará antes una copia de lo actual.')))return;saveLocalBackup();DB=data;normDB();viewKey=DB.lastView||lastMonthKey();ensureMonth(viewKey);persist();renderAll();showToast('Datos restaurados desde el archivo ✅');}catch(err){showToast('No se pudo leer el archivo: '+(err.message||err));}finally{e.target.value='';}};r.readAsText(f);};
 $('closemonth').onclick=()=>{
   try{
     const cur=M(), lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
@@ -966,6 +993,8 @@ $('export').onclick=()=>{
 function startApp(){$('root').style.display='';renderAll();}
 loadLocal();
 applyTheme(localStorage.getItem('theme')||'pastel');
+/* Al enfocar una casilla numérica, seleccionar todo para poder reemplazar el número completo */
+document.addEventListener('focusin',e=>{const t=e.target;if(t&&t.tagName==='INPUT'&&(t.type==='number'||t.inputMode==='numeric'||t.getAttribute('inputmode')==='numeric')){setTimeout(()=>{try{t.select();}catch(_){}},0);}});
 
 const configured=!FIREBASE_CONFIG.apiKey.startsWith('PEGA');
 if(configured&&window.firebase){
@@ -979,7 +1008,7 @@ if(configured&&window.firebase){
       firebase.database().ref('users/'+uid).on('value',snap=>{
         const v=snap.val();
         try{
-          if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();}
+          if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();saveLocalBackup(JSON.parse(JSON.stringify(DB)));cloudBackup(JSON.parse(JSON.stringify(DB)));}
           else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});maybeOnboard();}
         }finally{applyingRemote=false;}
       });
