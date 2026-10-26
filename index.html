@@ -198,6 +198,53 @@
   #toast b{color:var(--title)}
   #toast .toast-msg{flex:1}
   #toast .toast-x{flex-shrink:0;background:var(--panel);border:none;color:var(--soft);font-weight:800;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:.95rem;pointer-events:auto}
+
+  /* ===== MEJORA VISUAL MODERNA (aplica a TODOS los temas) ===== */
+  .card{border-radius:24px;border:1px solid var(--border);transition:transform .15s,box-shadow .2s}
+  .card h2{letter-spacing:.2px}
+  .tabs{border-radius:20px;padding:7px}
+  .tab{border-radius:15px;transition:.2s}
+  .tab.active{box-shadow:0 6px 16px rgba(0,0,0,.18)}
+  .btn{border-radius:16px;letter-spacing:.3px;box-shadow:0 8px 20px rgba(0,0,0,.14);transition:transform .12s,filter .2s}
+  .btn:active{transform:translateY(1px) scale(.995)}
+  .mini{border-radius:14px;transition:.15s}
+  .mini:active{transform:translateY(1px)}
+  .summary{border-radius:28px}
+  .stat{border-radius:18px}
+  .item{border-radius:15px}
+  .bar{height:22px;border-radius:14px}
+  .bar>span{border-radius:14px}
+  .check{border-radius:50%}
+  .cal-d{border-radius:10px}
+  .monthnav{border-radius:22px}
+  .monthnav button{border-radius:15px}
+  /* gráfica diaria */
+  .daychart-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  #daychart{display:block;width:100%;min-width:320px;height:200px}
+  /* lista de gastos personales con scroll cuando hay muchos */
+  #pers-list.scrolled{overflow-y:auto;border:1px solid var(--border);border-radius:16px;background:var(--field);padding:8px;-webkit-overflow-scrolling:touch}
+  #pers-list.scrolled::-webkit-scrollbar{width:7px}
+  #pers-list.scrolled::-webkit-scrollbar-thumb{background:var(--pers-l);border-radius:8px}
+  #pers-list .scroll-hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:4px}
+  /* sección banco / extractos */
+  .rings{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:6px}
+  .ring-card{background:var(--panel);border-radius:20px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:var(--shadow)}
+  .ring-card .ring-lbl{font-size:.78rem;color:var(--soft);font-weight:700;text-align:center}
+  .ring-card .ring-val{font-size:.74rem;color:var(--muted)}
+  .bank-stat{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;border-radius:14px;background:var(--field);margin-bottom:8px}
+  .bank-stat b{color:var(--title)}
+  .cat-row{display:flex;align-items:center;gap:8px;padding:7px 2px}
+  .cat-row .dot{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
+  .cat-row .cat-nm{flex:1;font-size:.9rem}
+  .cat-row .cat-amt{font-weight:700;color:var(--title)}
+  .drop{border:2px dashed var(--border);border-radius:18px;padding:22px;text-align:center;color:var(--muted);background:var(--field);cursor:pointer}
+  .drop b{color:var(--pers)}
+  .tx-list{max-height:260px;overflow-y:auto;margin-top:10px;border:1px solid var(--border);border-radius:14px}
+  .tx-row{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:.85rem}
+  .tx-row:last-child{border-bottom:none}
+  .tx-row .tx-d{color:var(--muted);flex:0 0 auto}
+  .tx-row .tx-nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tx-row .tx-a{font-weight:700;color:var(--title);flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -246,7 +293,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v41</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v42</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -267,6 +314,7 @@
     <button class="tab active" id="tab-fin">💰 Finanzas</button>
     <button class="tab" id="tab-inv">📈 Inversiones</button>
     <button class="tab" id="tab-dcalc">🧮 Deudas</button>
+    <button class="tab" id="tab-banco">🏦 Banco</button>
   </div>
 
   <!-- ============ FINANZAS ============ -->
@@ -384,10 +432,17 @@
           </div>
         </div>
 
+        <div class="card" style="grid-column:1/-1">
+          <h2>📈 Gasto acumulado del mes</h2>
+          <div class="note" id="day-note" style="margin-bottom:8px">Cada día suma lo que gastas (gastos personales con fecha).</div>
+          <div class="daychart-wrap"><svg id="daychart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet"></svg></div>
+        </div>
+
         <div style="grid-column:1/-1;margin-top:4px;text-align:center">
           <button class="mini" id="closemonth" style="background:var(--aho-bg);color:var(--aho);border:1.5px solid var(--aho);font-weight:700">🗓️ Iniciar mes siguiente</button>
           <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-            <button class="mini" id="export">⬇️ Exportar mis datos (.txt)</button>
+            <button class="mini" id="export">⬇️ Exportar todo (.txt)</button>
+            <button class="mini" id="export-month" style="background:var(--inv-bg);color:var(--inv)">⬇️ Exportar este mes</button>
             <button class="mini" id="recover" style="background:var(--aho-bg);color:var(--aho)">♻️ Recuperar copia</button>
             <button class="mini" id="restorefile" style="background:var(--ing-bg);color:var(--ing)">📂 Restaurar desde .txt</button>
           </div>
@@ -452,6 +507,31 @@
       <input type="number" id="av-pay" placeholder="Ej: 100000 (más que la cuota mínima)" min="0" inputmode="numeric">
       <div class="inv-result" id="av-result"></div>
       <div class="note" style="margin-top:6px">Compara pagar la cuota mínima vs. pagar más: cuánto ahorras y cuántos meses te quitas.</div>
+    </div>
+  </div>
+
+  <!-- ============ BANCO / EXTRACTOS ============ -->
+  <div id="view-banco" style="display:none">
+    <div class="card">
+      <h2>🏦 Subir extracto bancario</h2>
+      <div class="note" style="margin-bottom:10px">Sube tu extracto de <b>Nu — tarjeta de crédito</b> en PDF y te saco un balance con estadísticas. Tus datos se procesan en tu propio dispositivo.</div>
+      <div class="drop" id="bank-drop">📄 Toca aquí para elegir el <b>PDF del extracto de Nu</b><br><span style="font-size:.8rem">o arrastra el archivo</span></div>
+      <input type="file" id="bank-input" accept="application/pdf,.pdf" style="display:none">
+      <div class="note" id="bank-status" style="margin-top:10px"></div>
+    </div>
+    <div class="card" id="bank-results" style="display:none">
+      <h2>📊 Balance del extracto</h2>
+      <div id="bank-summary"></div>
+      <h2 style="margin-top:16px;font-size:1rem">Reparto del gasto</h2>
+      <div class="rings" id="bank-rings"></div>
+      <h2 style="margin-top:16px;font-size:1rem">Gasto por categoría</h2>
+      <div class="daychart-wrap"><svg id="bank-bars" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;min-width:320px;height:220px"></svg></div>
+      <div id="bank-cats" style="margin-top:10px"></div>
+      <h2 style="margin-top:16px;font-size:1rem">Movimientos detectados</h2>
+      <div class="tx-list" id="bank-tx"></div>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="mini" id="bank-clear" style="background:var(--deuda-bg);color:var(--rojo)">🗑️ Quitar extracto</button>
+      </div>
     </div>
   </div>
 </div>
@@ -655,6 +735,8 @@ function render(){
   renderInvSub();
   renderCalendar();
   drawPie(c,income,libre);
+  fitPersList();
+  renderDayChart();
 }
 
 /* ---- calendario del mes ---- */
@@ -862,15 +944,157 @@ function showView(v){
   $('view-fin').style.display=v==='fin'?'':'none';
   $('view-inv').style.display=v==='inv'?'':'none';
   $('view-dcalc').style.display=v==='dcalc'?'':'none';
+  $('view-banco').style.display=v==='banco'?'':'none';
   $('tab-fin').classList.toggle('active',v==='fin');
   $('tab-inv').classList.toggle('active',v==='inv');
   $('tab-dcalc').classList.toggle('active',v==='dcalc');
+  $('tab-banco').classList.toggle('active',v==='banco');
   if(v==='inv'){renderInvCalc();renderInvList();}
   if(v==='dcalc'){renderDcTable();renderAvance();}
+  if(v==='banco'){renderBank();}
 }
 $('tab-fin').onclick=()=>showView('fin');
 $('tab-inv').onclick=()=>{showView('inv');tip('tabinv','📈 Calcula cuánto ganarías invirtiendo y agrégalo a tus finanzas para que sume mes a mes.');};
 $('tab-dcalc').onclick=()=>{showView('dcalc');tip('tabdcalc','🧮 Calcula el costo de una deuda. Escribe el % anual (E.A.) o mensual (E.M.) y se convierten solos.');};
+$('tab-banco').onclick=()=>{showView('banco');tip('tabbanco','🏦 Sube tu extracto de Nu en PDF y te saco un balance con estadísticas. Todo se procesa en tu dispositivo.');};
+
+/* ===== Gráfica de gasto acumulado por día ===== */
+function dayShort(n){n=Math.round(n||0);const a=Math.abs(n);if(a>=1e6)return '$'+(n/1e6).toFixed(a%1e6?1:0)+'M';if(a>=1e3)return '$'+Math.round(n/1e3)+'k';return '$'+n;}
+function renderDayChart(){
+  const svg=$('daychart');if(!svg)return;
+  const c=M(),dates=calDates();
+  const pad=x=>String(x).padStart(2,'0'),ymd=dt=>dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
+  const byDate={};(c.pers||[]).forEach(x=>{if(x.date)byDate[x.date]=(byDate[x.date]||0)+(x.amt||0);});
+  const W=640,H=200,mL=56,mR=16,mT=16,mB=26,pw=W-mL-mR,ph=H-mT-mB;
+  let cum=0;const pts=dates.map((dt,i)=>{cum+=byDate[ymd(dt)]||0;return {i,day:dt.getDate(),v:cum};});
+  const total=cum,lim=c.pLimit||0,maxY=Math.max(total,lim,1)*1.08;
+  const X=i=>mL+(dates.length<=1?pw/2:pw*i/(dates.length-1)),Y=v=>mT+ph-(v/maxY)*ph;
+  const col=cssVar('--pers'),grid=cssVar('--border'),txt=cssVar('--muted'),limc=cssVar('--rojo');
+  let s='';
+  for(let g=0;g<=4;g++){const yy=mT+ph*g/4,val=maxY*(4-g)/4;s+=`<line x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}" stroke="${grid}" stroke-width="1"/><text x="${mL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end" font-size="10" fill="${txt}">${dayShort(val)}</text>`;}
+  const step=Math.max(1,Math.ceil(dates.length/7));
+  dates.forEach((dt,i)=>{if(i%step===0||i===dates.length-1)s+=`<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10" fill="${txt}">${dt.getDate()}</text>`;});
+  if(total<=0){s+=`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="${txt}">Aún no hay gastos con fecha este mes 🍃</text>`;svg.innerHTML=s;if($('day-note'))$('day-note').innerHTML='Cada día suma lo que gastas (gastos personales con fecha).';return;}
+  if(lim>0&&lim<=maxY){const yl=Y(lim);s+=`<line x1="${mL}" y1="${yl.toFixed(1)}" x2="${W-mR}" y2="${yl.toFixed(1)}" stroke="${limc}" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W-mR}" y="${(yl-4).toFixed(1)}" text-anchor="end" font-size="10" fill="${limc}">límite ${dayShort(lim)}</text>`;}
+  const line=pts.map(p=>`${X(p.i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+  s+=`<polygon points="${mL},${mT+ph} ${line} ${X(pts[pts.length-1].i).toFixed(1)},${mT+ph}" fill="${col}" opacity="0.14"/>`;
+  s+=`<polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const last=pts[pts.length-1];s+=`<circle cx="${X(last.i).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4.5" fill="${col}" stroke="${cssVar('--card')}" stroke-width="2"/>`;
+  svg.innerHTML=s;
+  if($('day-note'))$('day-note').innerHTML=`Llevas gastado <b>${fmt(total)}</b> este mes${lim>0?` · límite ${fmt(lim)}`:''}. La línea sube con cada gasto personal con fecha.`;
+}
+/* Lista de gastos personales con scroll si hay muchos (misma altura que gastos fijos) */
+function fitPersList(){
+  const pl=$('pers-list'),hl=$('hogar-list');if(!pl||!hl)return;
+  pl.classList.remove('scrolled');pl.style.maxHeight='';
+  const hint=pl.querySelector('.scroll-hint');if(hint)hint.remove();
+  const hogarH=Math.max(170,hl.offsetHeight);
+  if(pl.scrollHeight>hogarH+12){
+    pl.style.maxHeight=hogarH+'px';pl.classList.add('scrolled');
+    const h=document.createElement('div');h.className='scroll-hint';h.textContent='↕ desliza para ver todos tus gastos';pl.appendChild(h);
+  }
+}
+
+/* ===== Banco / extractos (PDF) ===== */
+let pdfjsReady=null;
+function loadPdfjs(){if(pdfjsReady)return pdfjsReady;pdfjsReady=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';sc.onload=()=>{try{window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';res(window.pdfjsLib);}catch(e){rej(e);}};sc.onerror=()=>rej(new Error('No se pudo cargar el lector de PDF. Revisa tu conexión a internet.'));document.head.appendChild(sc);});return pdfjsReady;}
+async function pdfToLines(file){const pdfjs=await loadPdfjs();const buf=await file.arrayBuffer();const doc=await pdfjs.getDocument({data:buf}).promise;const lines=[];for(let p=1;p<=doc.numPages;p++){const page=await doc.getPage(p);const tc=await page.getTextContent();const rows={};tc.items.forEach(it=>{const y=Math.round(it.transform[5]);(rows[y]=rows[y]||[]).push(it);});Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{const row=rows[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(i=>i.str).join(' ').replace(/\s+/g,' ').trim();if(row)lines.push(row);});}return lines;}
+const MES3={ENE:1,FEB:2,MAR:3,ABR:4,MAY:5,JUN:6,JUL:7,AGO:8,SEP:9,SEPT:9,OCT:10,NOV:11,DIC:12};
+function parseCOP(s){if(!s)return null;let neg=/-/.test(s);s=s.replace(/[^\d.,]/g,'');if(!s)return null;if(/,\d{2}$/.test(s))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/\./g,'').replace(/,/g,'');let n=parseFloat(s);if(isNaN(n))return null;return neg?-n:n;}
+function parseStatement(lines){
+  const tx=[];
+  const amtRe=/(-?\$?\s?\d{1,3}(?:[.\s]\d{3})+(?:,\d{2})?|-?\$?\s?\d+,\d{2})\s*$/;
+  const d1=/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/;
+  const d2=/^(\d{1,2})\s+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|SEPT|OCT|NOV|DIC)\.?/i;
+  const d3=/^(\d{4})-(\d{2})-(\d{2})\b/;
+  lines.forEach(ln=>{
+    const am=ln.match(amtRe);if(!am)return;const amt=parseCOP(am[1]);if(amt===null||Math.abs(amt)<1)return;
+    let d=null,mo=null,yr=null,rest=ln,m;
+    if((m=ln.match(d3))){yr=+m[1];mo=+m[2];d=+m[3];rest=ln.slice(m[0].length);}
+    else if((m=ln.match(d1))){d=+m[1];mo=+m[2];yr=m[3]?(+m[3]<100?2000+(+m[3]):+m[3]):null;rest=ln.slice(m[0].length);}
+    else if((m=ln.match(d2))){d=+m[1];mo=MES3[m[2].toUpperCase()]||null;rest=ln.slice(m[0].length);}
+    else return;
+    if(!mo||mo<1||mo>12||d<1||d>31)return;
+    let desc=rest.replace(am[1],'').replace(/\s+/g,' ').replace(/^[-–•\s:.]+/,'').trim();
+    desc=desc.replace(/[-$]?\s?\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?\s*$/,'').trim();
+    if(!desc||desc.length<2)desc='(sin detalle)';
+    const low=desc.toLowerCase();
+    const isPay=/\bpago\b|\babono\b|pago recibid|a su favor|recibido gracias|devoluci/i.test(low);
+    tx.push({date:(yr||'')+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'),day:d,mo,desc:desc.slice(0,48),amt:Math.abs(amt),pay:isPay});
+  });
+  return tx;
+}
+const BANKCATS=[
+  {k:'Supermercado',c:'#ff5c8a',re:/exito|jumbo|carulla|\bd1\b|\bara\b|olimpica|supermerc|makro|\bmetro\b|surti|merqueo|justo/i},
+  {k:'Restaurantes',c:'#9b7bff',re:/rest|mcdonald|burger|\bkfc\b|rappi|pizza|frisby|domino|caf[eé]|starbucks|juan valdez|comida|\bbar\b|sandwich|sushi|wok|crepes/i},
+  {k:'Transporte',c:'#ffc857',re:/uber|didi|cabify|taxi|gasolin|terpel|texaco|mobil|primax|estaci[oó]n|parqueo|parking|transmi|peaje|\bbus\b/i},
+  {k:'Compras',c:'#4cc4e0',re:/falabella|zara|h&m|mercadolibre|mercado libre|amazon|aliexpress|shein|tienda|mall|homecenter|alkosto|ktronix|miniso/i},
+  {k:'Servicios',c:'#34d6a0',re:/netflix|spotify|hbo|disney|youtube|claro|movistar|tigo|\bune\b|\bepm\b|agua|energia|internet|celular|suscrip|google|apple\.com|icloud|microsoft|canva/i},
+  {k:'Salud',c:'#ff8f5c',re:/farmacia|drogas|cruz verde|locatel|\beps\b|m[eé]dic|salud|cl[ií]nica|odont|gimnasio|smartfit|bodytech/i},
+];
+function catOf(desc){const l=(desc||'').toLowerCase();for(const c of BANKCATS){if(c.re.test(l))return c;}return {k:'Otros',c:'#8a8aa8'};}
+function statementStats(st){
+  const spend=st.tx.filter(t=>!t.pay),pays=st.tx.filter(t=>t.pay);
+  const total=spend.reduce((a,t)=>a+t.amt,0),payTotal=pays.reduce((a,t)=>a+t.amt,0);
+  const bc={};spend.forEach(t=>{const c=catOf(t.desc);if(!bc[c.k])bc[c.k]={amt:0,c:c.c,n:0};bc[c.k].amt+=t.amt;bc[c.k].n++;});
+  const cats=Object.keys(bc).map(k=>({k,amt:bc[k].amt,c:bc[k].c,n:bc[k].n})).sort((a,b)=>b.amt-a.amt);
+  return {total,payTotal,cats,count:spend.length};
+}
+function ringSvg(pct,color){pct=Math.max(0,Math.min(100,pct));const r=34,cc=2*Math.PI*r,off=cc*(1-pct/100);return `<svg width="84" height="84" viewBox="0 0 86 86"><circle cx="43" cy="43" r="${r}" fill="none" stroke="${cssVar('--field')}" stroke-width="9"/><circle cx="43" cy="43" r="${r}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${cc.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 43 43)"/><text x="43" y="48" text-anchor="middle" font-size="17" font-weight="800" fill="${cssVar('--title')}">${Math.round(pct)}%</text></svg>`;}
+function drawBankBars(cats,total){
+  const svg=$('bank-bars');if(!svg)return;const data=cats.slice(0,6);
+  const W=640,H=220,mT=22,mB=42,mL=12,mR=12,pw=W-mL-mR,ph=H-mT-mB;
+  if(!data.length){svg.innerHTML='';return;}
+  const max=Math.max.apply(null,data.map(d=>d.amt).concat([1])),bw=pw/data.length,bar=Math.min(66,bw*0.6);
+  let s='';
+  data.forEach((d,i)=>{const x=mL+bw*i+(bw-bar)/2,h=ph*d.amt/max,y=mT+ph-h;
+    s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bar.toFixed(1)}" height="${Math.max(2,h).toFixed(1)}" rx="7" fill="${d.c}"/>`;
+    s+=`<text x="${(x+bar/2).toFixed(1)}" y="${(y-5).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${cssVar('--soft')}">${dayShort(d.amt)}</text>`;
+    s+=`<text x="${(x+bar/2).toFixed(1)}" y="${H-24}" text-anchor="middle" font-size="10" fill="${cssVar('--muted')}">${esc(d.k.length>9?d.k.slice(0,8)+'…':d.k)}</text>`;
+    s+=`<text x="${(x+bar/2).toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="9" fill="${cssVar('--muted')}">${total?Math.round(d.amt/total*100):0}%</text>`;
+  });
+  svg.innerHTML=s;
+}
+function renderBank(){
+  const st=DB.bankStatement,res=$('bank-results');if(!res)return;
+  if(!st||!st.tx||!st.tx.length){res.style.display='none';return;}
+  res.style.display='';
+  const s=statementStats(st);
+  $('bank-summary').innerHTML=
+    `<div class="bank-stat"><span>Banco / extracto</span><b>${esc(st.bank||'Nu')}</b></div>`+
+    (st.period?`<div class="bank-stat"><span>Periodo</span><b>${esc(st.period)}</b></div>`:'')+
+    `<div class="bank-stat"><span>Total gastado</span><b style="color:var(--rojo)">${fmt(s.total)}</b></div>`+
+    (s.payTotal>0?`<div class="bank-stat"><span>Pagos / abonos</span><b style="color:var(--verde)">${fmt(s.payTotal)}</b></div>`:'')+
+    `<div class="bank-stat"><span>Movimientos</span><b>${s.count}</b></div>`+
+    `<div class="bank-stat"><span>Gasto promedio</span><b>${fmt(s.count?s.total/s.count:0)}</b></div>`;
+  const top=s.cats.slice(0,4);
+  $('bank-rings').innerHTML=top.length?top.map(c=>`<div class="ring-card">${ringSvg(s.total?c.amt/s.total*100:0,c.c)}<div class="ring-lbl">${esc(c.k)}</div><div class="ring-val">${fmt(c.amt)}</div></div>`).join(''):'<div class="note">Sin categorías</div>';
+  drawBankBars(s.cats,s.total);
+  $('bank-cats').innerHTML=s.cats.map(c=>`<div class="cat-row"><span class="dot" style="background:${c.c}"></span><span class="cat-nm">${esc(c.k)} <small style="color:var(--muted)">(${c.n})</small></span><span class="cat-amt">${fmt(c.amt)} · ${s.total?Math.round(c.amt/s.total*100):0}%</span></div>`).join('');
+  const txs=st.tx.slice().sort((a,b)=>(b.day||0)-(a.day||0));
+  $('bank-tx').innerHTML=txs.map(t=>`<div class="tx-row"><span class="tx-d">${t.day?String(t.day).padStart(2,'0')+(t.mo?'/'+String(t.mo).padStart(2,'0'):''):''}</span><span class="tx-nm">${esc(t.desc)}</span><span class="tx-a" style="color:${t.pay?'var(--verde)':'var(--title)'}">${t.pay?'−':''}${fmt(t.amt)}</span></div>`).join('');
+}
+async function handleBankFile(file){
+  if(!file)return;
+  if(!/\.pdf$/i.test(file.name)&&file.type!=='application/pdf'){showToast('Sube el extracto en formato PDF 📄');return;}
+  $('bank-status').innerHTML='⏳ Leyendo el PDF… (puede tardar unos segundos)';
+  try{
+    const lines=await pdfToLines(file);
+    const tx=parseStatement(lines);
+    if(!tx.length){$('bank-status').innerHTML='⚠️ No pude detectar movimientos. Puede ser un PDF escaneado (imagen) o con un formato distinto. Si me compartes el archivo, ajusto la lectura para tu extracto de Nu.';return;}
+    let period='';const pl=lines.find(l=>/periodo|per[ií]odo|facturaci[oó]n|fecha de corte|del\s+\d/i.test(l));if(pl)period=pl.slice(0,70);
+    DB.bankStatement={bank:'Nu',loadedAt:Date.now(),period,tx,fileName:file.name};
+    persist();renderBank();
+    const spend=tx.filter(t=>!t.pay).reduce((a,t)=>a+t.amt,0);
+    $('bank-status').innerHTML=`✅ Listo: <b>${tx.length}</b> movimientos · total gastado <b>${fmt(spend)}</b>. Revisa abajo que los valores coincidan con tu extracto.`;
+  }catch(err){$('bank-status').innerHTML='⚠️ No se pudo leer el PDF: '+esc(err&&err.message||String(err));}
+}
+$('bank-drop').onclick=()=>$('bank-input').click();
+$('bank-drop').ondragover=e=>{e.preventDefault();e.currentTarget.style.borderColor='var(--pers)';};
+$('bank-drop').ondragleave=e=>{e.currentTarget.style.borderColor='';};
+$('bank-drop').ondrop=e=>{e.preventDefault();e.currentTarget.style.borderColor='';const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)handleBankFile(f);};
+$('bank-input').onchange=e=>{const f=e.target.files&&e.target.files[0];if(f)handleBankFile(f);e.target.value='';};
+$('bank-clear').onclick=async()=>{if(await confirmBox('¿Quitar el extracto cargado?')){delete DB.bankStatement;persist();renderBank();showToast('Extracto quitado.');}};
 
 /* ---- navegación meses ---- */
 function goTo(k,dir){
@@ -963,22 +1187,22 @@ async function restoreFlow(){
 }
 $('recover').onclick=restoreFlow;
 $('restorefile').onclick=()=>$('restore-input').click();
-$('restore-input').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const txt=String(r.result||'');const i=txt.indexOf('DATA:');if(i<0){showToast('Ese archivo no tiene una copia de datos. Usa un .txt exportado desde la app.');return;}const data=JSON.parse(txt.slice(i+5));if(!data||typeof data!=='object'||!data.months){showToast('No se pudo leer la copia del archivo.');return;}if(!(await confirmBox('El archivo tiene '+nMonths(data)+' meses. ¿Restaurar estos datos? Se guardará antes una copia de lo actual.')))return;saveLocalBackup();DB=data;normDB();viewKey=DB.lastView||lastMonthKey();ensureMonth(viewKey);persist();renderAll();showToast('Datos restaurados desde el archivo ✅');}catch(err){showToast('No se pudo leer el archivo: '+(err.message||err));}finally{e.target.value='';}};r.readAsText(f);};
+$('restore-input').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const txt=String(r.result||'');const i=txt.indexOf('DATA:');if(i<0){showToast('Ese archivo no tiene una copia de datos. Usa un .txt exportado desde la app.');return;}const data=JSON.parse(txt.slice(i+5));if(!data||typeof data!=='object'||!data.months){showToast('No se pudo leer la copia del archivo.');return;}const keys=Object.keys(data.months);if(!keys.length){showToast('El archivo no tiene meses para restaurar.');return;}if(!(await confirmBox('El archivo tiene '+keys.length+' mes(es): '+keys.map(keyTitle).join(', ')+'. Se actualizarán SOLO esos meses, sin tocar los demás. ¿Continuar?')))return;saveLocalBackup();const n=mergeRestore(data);viewKey=keys.slice().sort().reverse()[0];ensureMonth(viewKey);persist();renderAll();showToast('✅ Se restauraron '+n+' mes(es) sin borrar los demás.');}catch(err){showToast('No se pudo leer el archivo: '+(err.message||err));}finally{e.target.value='';}};r.readAsText(f);};
 $('closemonth').onclick=()=>{
   try{
     const cur=M(), lib=libreOf(viewKey), nk=shiftKey(viewKey,1);
     const nm=ensureMonth(nk);
     // Gastos fijos: se copian del mes actual, sin marcar (siempre)
-    if((cur.hogar||[]).length)nm.hogar=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,paid:false,prio:h.prio||0}));
+    if((cur.hogar||[]).length&&!(nm.hogar||[]).length)nm.hogar=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,paid:false,prio:h.prio||0}));
     // Tarjetas: manuales sin valor (para rellenar); préstamos siguen con su saldo/cuotas tal cual (se descuentan al chequear el pago)
-    if((cur.debts||[]).length)nm.debts=(cur.debts||[]).filter(d=>!(d.cuotasTotal!==undefined&&(d.capital||0)<=0)).map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,amt:d.amt||0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false};if(d.manejo)o.manejo=d.manejo;return o;});
+    if((cur.debts||[]).length&&!(nm.debts||[]).length)nm.debts=(cur.debts||[]).filter(d=>!(d.cuotasTotal!==undefined&&(d.capital||0)<=0)).map(d=>{const o=d.cuotasTotal!==undefined?{bank:d.bank,amt:d.amt||0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false,capital:d.capital||0,cuotaOrig:d.cuotaOrig||d.amt||0,cuotasTotal:d.cuotasTotal,im:d.im||0}:{bank:d.bank,amt:0,dueDay:(d.dueDay!=null?d.dueDay:null),paid:false};if(d.manejo)o.manejo=d.manejo;return o;});
     nm.incomes=(nm.incomes||[]).filter(x=>x.name!=='Sobrante mes anterior'&&x.name!=='Faltante mes anterior');
     if(lib>0)nm.incomes.unshift({name:'Sobrante mes anterior',amt:Math.round(lib)});
     else if(lib<0)nm.incomes.unshift({name:'Faltante mes anterior',amt:Math.round(lib)});
     // mantener plantillas al día por si se usan en otro lado
     DB.fixedTemplate=(cur.hogar||[]).map(h=>({name:h.name,amt:h.amt||0,prio:h.prio||0}));
     goTo(nk,'next');
-    showToast('✅ Pasaste a '+keyTitle(nk)+' con tus gastos fijos (sin marcar), tarjetas y saldo libre. (Vuelve con ◀ si fue sin querer.)');
+    showToast('✅ Pasaste a '+keyTitle(nk)+'. Si ese mes ya tenía gastos fijos o tarjetas, se conservan; si estaba vacío, se copian del mes anterior. (Vuelve con ◀ si fue sin querer.)');
   }catch(err){showToast('No se pudo iniciar el mes: '+(err&&err.message?err.message:err));}
 };
 
@@ -991,16 +1215,36 @@ function monthToText(s,key){const L=[];const PRIO={1:'[OBLIGATORIO] ',2:'[FLUCTU
   L.push('  TARJETAS DE CREDITO: '+fmt(deu));(s.debts||[]).forEach(x=>{let e='';if(x.dueDay)e+=' (vence dia '+x.dueDay+')';if(x.cuotasTotal!==undefined){const inf=amortize(x.capital,x.amt,x.im||0);e+=' [cuota '+fmt(x.amt)+' · saldo '+(isFinite(inf.total)?fmt(inf.total):'—')+' · quedan '+(isFinite(inf.n)?inf.n:'∞')+' de '+x.cuotasTotal+' cuotas]';}if(x.manejo)e+=' (manejo '+fmt(x.manejo)+')';L.push('    - '+x.bank+': '+fmt((x.amt||0)+(x.manejo||0))+e);});
   L.push('  DISTRIBUCION (% de ingresos): Hogar '+pc(hog)+', Personales '+pc(perGas)+', Ahorro '+pc(s.ahorro||0)+', Tarjetas '+pc(deu)+', Libre '+pc(libre>0?libre:0));
   L.push('  >> LIBRE DEL MES: '+fmt(libre));return L.join('\n');}
-$('export').onclick=()=>{
+function buildExport(monthsArr,full){
   const now=new Date();let t='===== MIS FINANZAS =====\nExportado: '+now.toLocaleDateString('es-CO')+' '+now.toLocaleTimeString('es-CO')+'\n';
+  if(!monthsArr.length)t+='\n(Aun no hay meses con datos registrados)\n';
+  monthsArr.forEach(k=>{t+='\n['+keyTitle(k)+']\n'+monthToText(DB.months[k],k)+'\n';});
+  if(full&&DB.investments.length){t+='\n===== INVERSIONES =====\n';DB.investments.forEach(inv=>{const im=invMonthlyRate(inv.ea),FV=inv.principal*Math.pow(1+im,inv.months);t+='- '+inv.name+': '+fmt(inv.principal)+' al '+inv.ea+'% E.A. x '+inv.months+' meses (desde '+keyTitle(inv.start)+') -> ganancia '+fmt(FV-inv.principal)+'\n';});}
+  let payload;
+  if(full){payload=DB;}else{const mo={};monthsArr.forEach(k=>mo[k]=DB.months[k]);payload={months:mo,_partial:true};}
+  t+='\n----- RESPALDO -----\nDATA:'+JSON.stringify(payload);
+  return t;
+}
+function dlTxt(t,fname){const blob=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);}
+$('export').onclick=()=>{
   const meses=Object.keys(DB.months).filter(k=>monthHasData(DB.months[k])).sort().reverse();
-  if(!meses.length)t+='\n(Aun no hay meses con datos registrados)\n';
-  meses.forEach(k=>{t+='\n['+keyTitle(k)+']\n'+monthToText(DB.months[k],k)+'\n';});
-  if(DB.investments.length){t+='\n===== INVERSIONES =====\n';DB.investments.forEach(inv=>{const im=invMonthlyRate(inv.ea),FV=inv.principal*Math.pow(1+im,inv.months);t+='- '+inv.name+': '+fmt(inv.principal)+' al '+inv.ea+'% E.A. x '+inv.months+' meses (desde '+keyTitle(inv.start)+') -> ganancia '+fmt(FV-inv.principal)+'\n';});}
-  t+='\n----- RESPALDO -----\nDATA:'+JSON.stringify(DB);
-  const blob=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='mis-finanzas-'+now.toISOString().slice(0,10)+'.txt';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
-  tip('export','⬇️ Descargaste un respaldo en texto con todos tus meses. Guárdalo por si cambias de dispositivo.');
+  dlTxt(buildExport(meses,true),'mis-finanzas-COMPLETO-'+new Date().toISOString().slice(0,10)+'.txt');
+  tip('export','⬇️ Descargaste el respaldo COMPLETO (todos los meses). Guárdalo por si cambias de dispositivo.');
 };
+$('export-month').onclick=()=>{
+  if(!monthHasData(DB.months[viewKey])){showToast('Este mes no tiene datos para exportar todavía.');return;}
+  dlTxt(buildExport([viewKey],false),'mis-finanzas-'+viewKey+'.txt');
+  showToast('⬇️ Descargaste solo <b>'+keyTitle(viewKey)+'</b>. Al restaurarlo, solo se actualizará ese mes.');
+};
+function mergeRestore(data){
+  if(!data||typeof data!=='object')return 0;DB.months=DB.months||{};let n=0;
+  if(data.months){for(const k in data.months){DB.months[k]=normMonth(data.months[k]);n++;}}
+  if(Array.isArray(data.investments)){DB.investments=DB.investments||[];const have=new Set(DB.investments.map(i=>String(i.id)));data.investments.forEach(iv=>{if(!have.has(String(iv.id)))DB.investments.push(iv);});}
+  if((!DB.fixedTemplate||!DB.fixedTemplate.length)&&data.fixedTemplate)DB.fixedTemplate=data.fixedTemplate;
+  if((!DB.debtTemplate||!DB.debtTemplate.length)&&data.debtTemplate)DB.debtTemplate=data.debtTemplate;
+  if(DB.cutoffDay==null&&data.cutoffDay!=null)DB.cutoffDay=data.cutoffDay;
+  normDB();return n;
+}
 
 /* ---- arranque + Firebase ---- */
 function startApp(){$('root').style.display='';renderAll();}
