@@ -64,6 +64,27 @@
     --libre:#59647a;
     --verde:#54c692; --rojo:#e58484;
   }
+  /* ===== TEMA MODERNO (referencia: navy oscuro + rosa) ===== */
+  body.theme-moderno{
+    --text:#e9e7f7; --muted:#9e9ac8; --title:#ffffff; --ink:#ffffff; --soft:#bdb8e4;
+    --card:#33334f; --panel:#3c3c5c; --field:#2b2b44; --border:#4a4a72;
+    --stat-bg:rgba(255,255,255,.10);
+    --bg-grad:linear-gradient(160deg,#2a2a48 0%,#222240 55%,#1c1c38 100%);
+    --sum-grad:linear-gradient(135deg,#ff3d7f,#9b5cff);
+    --shadow:0 14px 34px rgba(0,0,0,.5);
+    --hogar:#ff5c8a; --hogar-bg:#3c2642;
+    --pers:#ff3d7f; --pers-l:#5a3a55; --pers-bg:#342a48;
+    --aho:#34d6a0; --aho-bg:#163a33;
+    --deuda:#ff8f5c; --deuda-bg:#3c2b22;
+    --ing:#ffc857; --ing-bg:#36311d;
+    --inv:#4cc4e0; --inv-bg:#163640;
+    --libre:#7a74b0;
+    --verde:#34d6a0; --rojo:#ff5c7a;
+  }
+  body.theme-moderno .card{border-radius:26px}
+  body.theme-moderno .tab.active{background:linear-gradient(135deg,#ff3d7f,#9b5cff)}
+  body.theme-moderno .monthnav button,body.theme-moderno .btn.hogar,body.theme-moderno .btn.pers{background:linear-gradient(135deg,#ff3d7f,#9b5cff)}
+  body.theme-moderno .check{border-color:var(--pers)}
 
   *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent}
   body{background:var(--bg-grad);color:var(--text);min-height:100vh;padding:18px 14px 40px;transition:background .3s}
@@ -293,7 +314,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v42</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v44</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -301,6 +322,7 @@
           <button class="theme-opt" data-theme="pastel"><span class="to-name">Pastel</span><span class="to-bars"><span style="background:#e084a6"></span><span style="background:#a98fd6"></span><span style="background:#6fc0a2"></span><span style="background:#ec9270"></span><span style="background:#e0b556"></span></span></button>
           <button class="theme-opt" data-theme="neutro"><span class="to-name">Neutro</span><span class="to-bars"><span style="background:#c4837a"></span><span style="background:#8090ab"></span><span style="background:#7fa38d"></span><span style="background:#c29a58"></span><span style="background:#a89d84"></span></span></button>
           <button class="theme-opt" data-theme="masculino"><span class="to-name">Oscuro</span><span class="to-bars"><span style="background:#72abe2"></span><span style="background:#8592e6"></span><span style="background:#54c49d"></span><span style="background:#e69066"></span><span style="background:#dfba5f"></span></span></button>
+          <button class="theme-opt" data-theme="moderno"><span class="to-name">Moderno 💖</span><span class="to-bars"><span style="background:#ff3d7f"></span><span style="background:#9b5cff"></span><span style="background:#34d6a0"></span><span style="background:#ff8f5c"></span><span style="background:#ffc857"></span></span></button>
         </div>
       </div>
       <button class="linkbtn" id="logout" style="display:none">Cerrar sesión</button>
@@ -375,6 +397,8 @@
           <div class="row" style="margin-top:10px">
             <div><label>Valor</label>
             <input type="number" id="p-amt" placeholder="0" min="0" inputmode="numeric"></div>
+            <div><label>Categoría</label>
+            <select id="p-cat"><option value="Regalos">🎁 Regalos</option><option value="Restaurantes">🍽️ Restaurantes</option><option value="Beauty">💅 Beauty</option><option value="Hogar">🏠 Hogar</option><option value="Salidas">🎉 Salidas</option><option value="Otros">🧩 Otros</option></select></div>
             <div><label>Fecha del gasto</label>
             <input type="date" id="p-date"></div>
           </div>
@@ -433,9 +457,15 @@
         </div>
 
         <div class="card" style="grid-column:1/-1">
-          <h2>📈 Gasto acumulado del mes</h2>
-          <div class="note" id="day-note" style="margin-bottom:8px">Cada día suma lo que gastas (gastos personales con fecha).</div>
+          <h2>📊 Gasto por día</h2>
+          <div class="note" id="day-note" style="margin-bottom:8px">Cada barra es lo que gastaste ese día (gastos personales con fecha).</div>
           <div class="daychart-wrap"><svg id="daychart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet"></svg></div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <h2>🕸️ Gastos personales por categoría</h2>
+          <div style="display:flex;justify-content:center"><svg id="radar" viewBox="0 0 300 280" preserveAspectRatio="xMidYMid meet" style="width:100%;max-width:360px;height:280px"></svg></div>
+          <div class="note" id="radar-note" style="text-align:center;margin-top:6px"></div>
         </div>
 
         <div style="grid-column:1/-1;margin-top:4px;text-align:center">
@@ -553,6 +583,8 @@ const FIREBASE_CONFIG = {
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MIN_KEY='2026-01';
+const PCATS=[{k:'Regalos',e:'🎁',c:'#ff5c8a'},{k:'Restaurantes',e:'🍽️',c:'#9b7bff'},{k:'Beauty',e:'💅',c:'#ff8fc7'},{k:'Hogar',e:'🏠',c:'#4cc4e0'},{k:'Salidas',e:'🎉',c:'#ffc857'},{k:'Otros',e:'🧩',c:'#8a8aa8'}];
+const pcat=k=>PCATS.find(c=>c.k===k)||PCATS[5];
 const $=id=>document.getElementById(id);
 const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CO');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -588,9 +620,10 @@ function monthsBetween(a,b){const[ya,ma]=a.split('-').map(Number),[yb,mb]=b.spli
 
 /* ---- temas ---- */
 function applyTheme(t){
-  document.body.classList.remove('theme-neutro','theme-masculino');
+  document.body.classList.remove('theme-neutro','theme-masculino','theme-moderno');
   if(t==='neutro')document.body.classList.add('theme-neutro');
   else if(t==='masculino')document.body.classList.add('theme-masculino');
+  else if(t==='moderno')document.body.classList.add('theme-moderno');
   try{localStorage.setItem('theme',t);}catch(e){}
   document.querySelectorAll('.thm').forEach(b=>b.classList.toggle('active',b.dataset.theme===t));
   document.querySelectorAll('.theme-opt').forEach(o=>o.classList.toggle('active',o.dataset.theme===t));
@@ -654,11 +687,11 @@ function migrateV2(old){
   if(old.current)months[todayKey()]=normMonth(old.current);
   return {months,fixedTemplate:old.fixedTemplate||[],investments:[],debtTemplate:[]};
 }
-let _lastBk=0;
+let _lastBk=0,_cloudTimer=null;
 function persist(){
   DB.lastView=viewKey;
   try{localStorage.setItem('finanzasV3',JSON.stringify(DB));localStorage.setItem('viewKeyV3',viewKey);}catch(e){}
-  if(cloud&&uid&&!applyingRemote){firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});}
+  if(cloud&&uid&&!applyingRemote){clearTimeout(_cloudTimer);_cloudTimer=setTimeout(()=>{if(cloud&&uid)firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});},700);}
   const now=Date.now();if(!applyingRemote&&now-_lastBk>20000){_lastBk=now;try{saveLocalBackup();}catch(e){}}
 }
 
@@ -703,7 +736,7 @@ function render(){
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
   $('p-bar').style.background=pBarColor(c.pLimit>0?spent/c.pLimit*100:0);
   const pl=$('pers-list');
-  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>`<div class="item pers-i"><span class="nm">${esc(x.name)}${x.date?` <small style="color:var(--soft);font-weight:600">${x.date.split('-').reverse().join('/')}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`).join(''):'';
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>{const pc=pcat(x.cat);return `<div class="item pers-i"><span class="nm"><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${pc.c};margin-right:5px"></span>${esc(x.name)} <small style="color:var(--soft);font-weight:600">${pc.e} ${esc(pc.k)}${x.date?' · '+x.date.split('-').reverse().join('/'):''}</small></span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`;}).join(''):'';
   pl.querySelectorAll('[data-pamt]').forEach(inp=>{inp.oninput=()=>{c.pers[+inp.dataset.pamt].amt=+inp.value||0;persist();renderTotals();};});
   pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);persist();render();});
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
@@ -737,6 +770,28 @@ function render(){
   drawPie(c,income,libre);
   fitPersList();
   renderDayChart();
+  renderRadar();
+}
+/* Pentágono (radar) de gastos personales por categoría */
+function renderRadar(){
+  const svg=$('radar');if(!svg)return;
+  const c=M(),axes=PCATS.slice(0,5);
+  const sums={};axes.forEach(a=>sums[a.k]=0);let otros=0,total=0;
+  (c.pers||[]).forEach(x=>{const k=PCATS.find(p=>p.k===x.cat)?x.cat:'Otros';if(k==='Otros')otros+=x.amt||0;else sums[k]+=x.amt||0;total+=x.amt||0;});
+  const W=300,cx=150,cy=130,R=92,N=5,maxV=Math.max.apply(null,axes.map(a=>sums[a.k]).concat([1]));
+  const ang=i=>(-90+i*360/N)*Math.PI/180;
+  const grid=cssVar('--border'),txt=cssVar('--muted'),col=cssVar('--pers');
+  let s='';
+  for(let g=1;g<=4;g++){const rr=R*g/4,pts=axes.map((a,i)=>`${(cx+rr*Math.cos(ang(i))).toFixed(1)},${(cy+rr*Math.sin(ang(i))).toFixed(1)}`).join(' ');s+=`<polygon points="${pts}" fill="none" stroke="${grid}" stroke-width="1"/>`;}
+  axes.forEach((a,i)=>{const x=cx+R*Math.cos(ang(i)),y=cy+R*Math.sin(ang(i));s+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${grid}" stroke-width="1"/>`;const lx=cx+(R+15)*Math.cos(ang(i)),ly=cy+(R+15)*Math.sin(ang(i));s+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" font-size="15">${a.e}</text>`;});
+  if(total<=0){s+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="12" fill="${txt}">Clasifica tus gastos 🍃</text>`;svg.innerHTML=s;if($('radar-note'))$('radar-note').innerHTML='Elige una categoría al agregar cada gasto personal.';return;}
+  const dpts=axes.map((a,i)=>{const rr=R*(sums[a.k]/maxV);return `${(cx+rr*Math.cos(ang(i))).toFixed(1)},${(cy+rr*Math.sin(ang(i))).toFixed(1)}`;}).join(' ');
+  s+=`<polygon points="${dpts}" fill="${col}" fill-opacity="0.32" stroke="${col}" stroke-width="2.5"/>`;
+  axes.forEach((a,i)=>{const rr=R*(sums[a.k]/maxV);s+=`<circle cx="${(cx+rr*Math.cos(ang(i))).toFixed(1)}" cy="${(cy+rr*Math.sin(ang(i))).toFixed(1)}" r="3.5" fill="${a.c}"/>`;});
+  svg.innerHTML=s;
+  const parts=axes.filter(a=>sums[a.k]>0).sort((x,y)=>sums[y.k]-sums[x.k]).map(a=>a.e+' '+a.k+' <b>'+fmt(sums[a.k])+'</b>');
+  if(otros>0)parts.push('🧩 Otros <b>'+fmt(otros)+'</b>');
+  if($('radar-note'))$('radar-note').innerHTML=parts.join(' · ');
 }
 
 /* ---- calendario del mes ---- */
@@ -965,23 +1020,22 @@ function renderDayChart(){
   const c=M(),dates=calDates();
   const pad=x=>String(x).padStart(2,'0'),ymd=dt=>dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());
   const byDate={};(c.pers||[]).forEach(x=>{if(x.date)byDate[x.date]=(byDate[x.date]||0)+(x.amt||0);});
-  const W=640,H=200,mL=56,mR=16,mT=16,mB=26,pw=W-mL-mR,ph=H-mT-mB;
-  let cum=0;const pts=dates.map((dt,i)=>{cum+=byDate[ymd(dt)]||0;return {i,day:dt.getDate(),v:cum};});
-  const total=cum,lim=c.pLimit||0,maxY=Math.max(total,lim,1)*1.08;
-  const X=i=>mL+(dates.length<=1?pw/2:pw*i/(dates.length-1)),Y=v=>mT+ph-(v/maxY)*ph;
-  const col=cssVar('--pers'),grid=cssVar('--border'),txt=cssVar('--muted'),limc=cssVar('--rojo');
+  const vals=dates.map((dt,i)=>({i,day:dt.getDate(),v:byDate[ymd(dt)]||0}));
+  const total=vals.reduce((a,x)=>a+x.v,0);
+  const W=640,H=200,mL=56,mR=14,mT=16,mB=26,pw=W-mL-mR,ph=H-mT-mB;
+  const maxY=Math.max.apply(null,vals.map(x=>x.v).concat([1]))*1.12;
+  const col=cssVar('--pers'),grid=cssVar('--border'),txt=cssVar('--muted');
   let s='';
   for(let g=0;g<=4;g++){const yy=mT+ph*g/4,val=maxY*(4-g)/4;s+=`<line x1="${mL}" y1="${yy.toFixed(1)}" x2="${W-mR}" y2="${yy.toFixed(1)}" stroke="${grid}" stroke-width="1"/><text x="${mL-6}" y="${(yy+3).toFixed(1)}" text-anchor="end" font-size="10" fill="${txt}">${dayShort(val)}</text>`;}
-  const step=Math.max(1,Math.ceil(dates.length/7));
-  dates.forEach((dt,i)=>{if(i%step===0||i===dates.length-1)s+=`<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10" fill="${txt}">${dt.getDate()}</text>`;});
-  if(total<=0){s+=`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="${txt}">Aún no hay gastos con fecha este mes 🍃</text>`;svg.innerHTML=s;if($('day-note'))$('day-note').innerHTML='Cada día suma lo que gastas (gastos personales con fecha).';return;}
-  if(lim>0&&lim<=maxY){const yl=Y(lim);s+=`<line x1="${mL}" y1="${yl.toFixed(1)}" x2="${W-mR}" y2="${yl.toFixed(1)}" stroke="${limc}" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W-mR}" y="${(yl-4).toFixed(1)}" text-anchor="end" font-size="10" fill="${limc}">límite ${dayShort(lim)}</text>`;}
-  const line=pts.map(p=>`${X(p.i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
-  s+=`<polygon points="${mL},${mT+ph} ${line} ${X(pts[pts.length-1].i).toFixed(1)},${mT+ph}" fill="${col}" opacity="0.14"/>`;
-  s+=`<polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-  const last=pts[pts.length-1];s+=`<circle cx="${X(last.i).toFixed(1)}" cy="${Y(last.v).toFixed(1)}" r="4.5" fill="${col}" stroke="${cssVar('--card')}" stroke-width="2"/>`;
+  if(total<=0){s+=`<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="${txt}">Aún no hay gastos con fecha este mes 🍃</text>`;svg.innerHTML=s;if($('day-note'))$('day-note').innerHTML='Cada barra es lo que gastaste ese día (gastos personales con fecha).';return;}
+  const n=dates.length,bw=pw/n,bar=Math.max(3,Math.min(26,bw*0.68)),step=Math.max(1,Math.ceil(n/12));
+  vals.forEach((o,i)=>{
+    const cx=mL+bw*i+bw/2;
+    if(o.v>0){const h=Math.max(2,ph*o.v/maxY),y=mT+ph-h;s+=`<rect x="${(cx-bar/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${col}"><title>Día ${o.day}: ${fmt(o.v)}</title></rect>`;}
+    if(i%step===0||i===n-1)s+=`<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10" fill="${txt}">${o.day}</text>`;
+  });
   svg.innerHTML=s;
-  if($('day-note'))$('day-note').innerHTML=`Llevas gastado <b>${fmt(total)}</b> este mes${lim>0?` · límite ${fmt(lim)}`:''}. La línea sube con cada gasto personal con fecha.`;
+  if($('day-note'))$('day-note').innerHTML=`Gasto por día · total del mes <b>${fmt(total)}</b>. Cada barra es lo que gastaste ese día.`;
 }
 /* Lista de gastos personales con scroll si hay muchos (misma altura que gastos fijos) */
 function fitPersList(){
@@ -1162,7 +1216,7 @@ $('d-ics').onclick=()=>{
 };
 $('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){showToast('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();tip('iadd','💵 Puedes agregar varias fuentes de ingreso (salario, freelance, extras...). Todas se suman.');};
 $('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){showToast('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();tip('hadd','🏠 Toca el <b>círculo</b> de un gasto cuando lo pagues, y toca su <b>valor</b> para editarlo. Se ordenan de mayor a menor solos.');};
-$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null;if(!n||!a||a<=0){showToast('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su fecha para llevar el registro. La barra te muestra cuánto te queda del límite.');};
+$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null,cat=$('p-cat').value||'Otros';if(!n||!a||a<=0){showToast('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt,cat});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su categoría y fecha. Abajo verás el pentágono por categoría.');};
 $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
@@ -1210,7 +1264,7 @@ $('closemonth').onclick=()=>{
 function monthToText(s,key){const L=[];const PRIO={1:'[OBLIGATORIO] ',2:'[FLUCTUANTE] '};const inc=(s.incomes||[]).reduce((a,x)=>a+x.amt,0);const hog=(s.hogar||[]).reduce((a,x)=>a+x.amt,0);const hogPag=(s.hogar||[]).filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);const perGas=(s.pers||[]).reduce((a,x)=>a+x.amt,0);const deu=debtsSum(s);const libre=inc-(hog+perGas+(s.ahorro||0)+deu);const den=inc>0?inc:1;const pc=v=>Math.round(v/den*100)+'%';
   L.push('  INGRESOS: '+fmt(inc));(s.incomes||[]).forEach(x=>L.push('    - '+x.name+': '+fmt(x.amt)));
   L.push('  HOGAR (gastos fijos): '+fmt(hog)+'  | Pagado: '+fmt(hogPag)+'  | Pendiente: '+fmt(hog-hogPag));(s.hogar||[]).forEach(x=>L.push('    - ['+(x.paid?'PAGADO':'PENDIENTE')+'] '+(PRIO[x.prio]||'')+x.name+': '+fmt(x.amt)));
-  L.push('  GASTOS PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas)+'  | Disponible: '+fmt((s.pLimit||0)-perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+(x.date?' ('+x.date.split('-').reverse().join('/')+')':'')+': '+fmt(x.amt)));
+  L.push('  GASTOS PERSONALES: limite '+fmt(s.pLimit||0)+'  | Gastado: '+fmt(perGas)+'  | Disponible: '+fmt((s.pLimit||0)-perGas));(s.pers||[]).forEach(x=>L.push('    - '+x.name+' ['+(x.cat||'Otros')+']'+(x.date?' ('+x.date.split('-').reverse().join('/')+')':'')+': '+fmt(x.amt)));
   L.push('  AHORRO: '+fmt(s.ahorro||0)+'   (recomendado 20%: '+fmt(inc*0.2)+')');
   L.push('  TARJETAS DE CREDITO: '+fmt(deu));(s.debts||[]).forEach(x=>{let e='';if(x.dueDay)e+=' (vence dia '+x.dueDay+')';if(x.cuotasTotal!==undefined){const inf=amortize(x.capital,x.amt,x.im||0);e+=' [cuota '+fmt(x.amt)+' · saldo '+(isFinite(inf.total)?fmt(inf.total):'—')+' · quedan '+(isFinite(inf.n)?inf.n:'∞')+' de '+x.cuotasTotal+' cuotas]';}if(x.manejo)e+=' (manejo '+fmt(x.manejo)+')';L.push('    - '+x.bank+': '+fmt((x.amt||0)+(x.manejo||0))+e);});
   L.push('  DISTRIBUCION (% de ingresos): Hogar '+pc(hog)+', Personales '+pc(perGas)+', Ahorro '+pc(s.ahorro||0)+', Tarjetas '+pc(deu)+', Libre '+pc(libre>0?libre:0));
@@ -1264,6 +1318,8 @@ if(configured&&window.firebase){
       startApp();
       firebase.database().ref('users/'+uid).on('value',snap=>{
         const v=snap.val();
+        const ae=document.activeElement, editing=ae&&(ae.tagName==='INPUT'||ae.tagName==='SELECT'||ae.isContentEditable);
+        if(editing&&!firstLoad)return; // no reconstruir mientras la usuaria escribe (evita perder el foco)
         try{
           if(v){applyingRemote=true;DB=v;normDB();if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}ensureMonth(viewKey);renderAll();maybeOnboard();saveLocalBackup(JSON.parse(JSON.stringify(DB)));cloudBackup(JSON.parse(JSON.stringify(DB)));}
           else{if(firstLoad){viewKey=DB.lastView||lastMonthKey();firstLoad=false;}firebase.database().ref('users/'+uid).set(JSON.parse(JSON.stringify(DB))).catch(()=>{});maybeOnboard();}
