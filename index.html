@@ -178,6 +178,7 @@
   .cal-d{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.72rem;border-radius:8px;background:var(--panel);color:var(--text)}
   .cal-d.cal-p{background:var(--pers);color:#fff;font-weight:700;cursor:pointer}
   .cal-d.cal-due-day{background:var(--deuda);color:#fff;font-weight:800;cursor:pointer}
+  .cal-d.cal-today{box-shadow:0 0 0 2.5px var(--verde);font-weight:800}
   .cal-dot-p{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:var(--pers)}
   .pie-card{grid-column:1/-1}
   .pie-wrap{display:flex;align-items:center;gap:22px;justify-content:center;flex-wrap:wrap;padding:6px 0}
@@ -258,6 +259,10 @@
   .cat-row .dot{width:12px;height:12px;border-radius:4px;flex:0 0 auto}
   .cat-row .cat-nm{flex:1;font-size:.9rem}
   .cat-row .cat-amt{font-weight:700;color:var(--title)}
+  .catrow{padding:8px 4px;border-radius:12px;cursor:pointer}
+  .catrow:active{background:var(--field)}
+  .catrow-top{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--text)}
+  .catrow .bar{height:12px}
   .drop{border:2px dashed var(--border);border-radius:18px;padding:22px;text-align:center;color:var(--muted);background:var(--field);cursor:pointer}
   .drop b{color:var(--pers)}
   .tx-list{max-height:260px;overflow-y:auto;margin-top:10px;border:1px solid var(--border);border-radius:14px}
@@ -314,7 +319,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v44</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v46</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -398,7 +403,7 @@
             <div><label>Valor</label>
             <input type="number" id="p-amt" placeholder="0" min="0" inputmode="numeric"></div>
             <div><label>Categoría</label>
-            <select id="p-cat"><option value="Regalos">🎁 Regalos</option><option value="Restaurantes">🍽️ Restaurantes</option><option value="Beauty">💅 Beauty</option><option value="Hogar">🏠 Hogar</option><option value="Salidas">🎉 Salidas</option><option value="Otros">🧩 Otros</option></select></div>
+            <select id="p-cat"><option value="Restaurantes, comida y salidas">🍽️ Restaurantes, comida y salidas</option><option value="Belleza, cuidado y salud">💅 Belleza, cuidado y salud</option><option value="Viajes">✈️ Viajes</option><option value="Regalos y celebraciones">🎁 Regalos y celebraciones</option><option value="Hogar y otros">🏠 Hogar y otros</option></select></div>
             <div><label>Fecha del gasto</label>
             <input type="date" id="p-date"></div>
           </div>
@@ -465,7 +470,7 @@
         <div class="card" style="grid-column:1/-1">
           <h2>🕸️ Gastos personales por categoría</h2>
           <div style="display:flex;justify-content:center"><svg id="radar" viewBox="0 0 300 280" preserveAspectRatio="xMidYMid meet" style="width:100%;max-width:360px;height:280px"></svg></div>
-          <div class="note" id="radar-note" style="text-align:center;margin-top:6px"></div>
+          <div class="note" id="radar-note" style="text-align:left;margin-top:6px"></div>
         </div>
 
         <div style="grid-column:1/-1;margin-top:4px;text-align:center">
@@ -583,8 +588,16 @@ const FIREBASE_CONFIG = {
 
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MIN_KEY='2026-01';
-const PCATS=[{k:'Regalos',e:'🎁',c:'#ff5c8a'},{k:'Restaurantes',e:'🍽️',c:'#9b7bff'},{k:'Beauty',e:'💅',c:'#ff8fc7'},{k:'Hogar',e:'🏠',c:'#4cc4e0'},{k:'Salidas',e:'🎉',c:'#ffc857'},{k:'Otros',e:'🧩',c:'#8a8aa8'}];
-const pcat=k=>PCATS.find(c=>c.k===k)||PCATS[5];
+const PCATS=[
+  {k:'Restaurantes, comida y salidas',e:'🍽️',c:'#9b7bff',tope:400000},
+  {k:'Belleza, cuidado y salud',e:'💅',c:'#ff8fc7',tope:200000},
+  {k:'Viajes',e:'✈️',c:'#4cc4e0',tope:200000},
+  {k:'Regalos y celebraciones',e:'🎁',c:'#ff5c8a',tope:150000},
+  {k:'Hogar y otros',e:'🏠',c:'#ffc857',tope:50000}
+];
+const CAT_ALIAS={'Regalos':'Regalos y celebraciones','Restaurantes':'Restaurantes, comida y salidas','Beauty':'Belleza, cuidado y salud','Salidas':'Restaurantes, comida y salidas','Hogar':'Hogar y otros','Otros':'Hogar y otros','Comida':'Restaurantes, comida y salidas','Salud':'Belleza, cuidado y salud'};
+function pcat(k){k=CAT_ALIAS[k]||k;return PCATS.find(c=>c.k===k)||PCATS[PCATS.length-1];}
+function catLimit(k){const d=(PCATS.find(c=>c.k===k)||{}).tope||0;return (DB.catLimits&&DB.catLimits[k]!=null)?DB.catLimits[k]:d;}
 const $=id=>document.getElementById(id);
 const fmt=n=>'$'+Math.round(n||0).toLocaleString('es-CO');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -772,26 +785,38 @@ function render(){
   renderDayChart();
   renderRadar();
 }
-/* Pentágono (radar) de gastos personales por categoría */
+/* Pentágono (radar) de gastos personales por categoría, con topes */
+function catBarColor(pct){pct=Math.max(0,Math.min(120,pct||0));const h=Math.max(0,130-1.3*pct);return 'hsl('+h+',65%,52%)';}
 function renderRadar(){
   const svg=$('radar');if(!svg)return;
-  const c=M(),axes=PCATS.slice(0,5);
-  const sums={};axes.forEach(a=>sums[a.k]=0);let otros=0,total=0;
-  (c.pers||[]).forEach(x=>{const k=PCATS.find(p=>p.k===x.cat)?x.cat:'Otros';if(k==='Otros')otros+=x.amt||0;else sums[k]+=x.amt||0;total+=x.amt||0;});
-  const W=300,cx=150,cy=130,R=92,N=5,maxV=Math.max.apply(null,axes.map(a=>sums[a.k]).concat([1]));
+  const c=M(),axes=PCATS;
+  const sums={};axes.forEach(a=>sums[a.k]=0);let total=0;
+  (c.pers||[]).forEach(x=>{const k=pcat(x.cat).k;sums[k]+=x.amt||0;total+=x.amt||0;});
+  const cx=150,cy=130,R=92,N=axes.length;
   const ang=i=>(-90+i*360/N)*Math.PI/180;
   const grid=cssVar('--border'),txt=cssVar('--muted'),col=cssVar('--pers');
   let s='';
   for(let g=1;g<=4;g++){const rr=R*g/4,pts=axes.map((a,i)=>`${(cx+rr*Math.cos(ang(i))).toFixed(1)},${(cy+rr*Math.sin(ang(i))).toFixed(1)}`).join(' ');s+=`<polygon points="${pts}" fill="none" stroke="${grid}" stroke-width="1"/>`;}
-  axes.forEach((a,i)=>{const x=cx+R*Math.cos(ang(i)),y=cy+R*Math.sin(ang(i));s+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${grid}" stroke-width="1"/>`;const lx=cx+(R+15)*Math.cos(ang(i)),ly=cy+(R+15)*Math.sin(ang(i));s+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" font-size="15">${a.e}</text>`;});
-  if(total<=0){s+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="12" fill="${txt}">Clasifica tus gastos 🍃</text>`;svg.innerHTML=s;if($('radar-note'))$('radar-note').innerHTML='Elige una categoría al agregar cada gasto personal.';return;}
-  const dpts=axes.map((a,i)=>{const rr=R*(sums[a.k]/maxV);return `${(cx+rr*Math.cos(ang(i))).toFixed(1)},${(cy+rr*Math.sin(ang(i))).toFixed(1)}`;}).join(' ');
-  s+=`<polygon points="${dpts}" fill="${col}" fill-opacity="0.32" stroke="${col}" stroke-width="2.5"/>`;
-  axes.forEach((a,i)=>{const rr=R*(sums[a.k]/maxV);s+=`<circle cx="${(cx+rr*Math.cos(ang(i))).toFixed(1)}" cy="${(cy+rr*Math.sin(ang(i))).toFixed(1)}" r="3.5" fill="${a.c}"/>`;});
+  axes.forEach((a,i)=>{const x=cx+R*Math.cos(ang(i)),y=cy+R*Math.sin(ang(i));s+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${grid}" stroke-width="1"/>`;const lx=cx+(R+15)*Math.cos(ang(i)),ly=cy+(R+15)*Math.sin(ang(i));s+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" text-anchor="middle" font-size="16">${a.e}</text>`;});
+  // polígono según % del tope (borde exterior = tope). >100% se queda en el borde.
+  const ratio=a=>{const t=catLimit(a.k);return t>0?Math.min(1,sums[a.k]/t):0;};
+  if(total>0){
+    const P=axes.map((a,i)=>{const rr=R*ratio(a);return [cx+rr*Math.cos(ang(i)),cy+rr*Math.sin(ang(i))];});
+    // un área de color por categoría (sector del centro a cada lado)
+    for(let i=0;i<N;i++){const p1=P[i],p2=P[(i+1)%N];s+=`<path d="M${cx},${cy} L${p1[0].toFixed(1)},${p1[1].toFixed(1)} L${p2[0].toFixed(1)},${p2[1].toFixed(1)} Z" fill="${axes[i].c}" fill-opacity="0.5"/>`;}
+    s+=`<polygon points="${P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${col}" stroke-width="2"/>`;
+    axes.forEach((a,i)=>{const t=catLimit(a.k),over=t>0&&sums[a.k]>t;s+=`<circle cx="${P[i][0].toFixed(1)}" cy="${P[i][1].toFixed(1)}" r="4" fill="${over?cssVar('--rojo'):a.c}" stroke="${cssVar('--card')}" stroke-width="1.5"/>`;});
+  }else{
+    s+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="12" fill="${txt}">Clasifica tus gastos 🍃</text>`;
+  }
   svg.innerHTML=s;
-  const parts=axes.filter(a=>sums[a.k]>0).sort((x,y)=>sums[y.k]-sums[x.k]).map(a=>a.e+' '+a.k+' <b>'+fmt(sums[a.k])+'</b>');
-  if(otros>0)parts.push('🧩 Otros <b>'+fmt(otros)+'</b>');
-  if($('radar-note'))$('radar-note').innerHTML=parts.join(' · ');
+  // Barras de tope por categoría (editable al tocar)
+  const box=$('radar-note');if(!box)return;
+  box.innerHTML='<div style="font-size:.74rem;color:var(--muted);margin-bottom:8px;text-align:center">El borde del pentágono es tu tope. Toca una categoría para cambiar su tope.</div>'+
+    axes.map(a=>{const sp=sums[a.k],t=catLimit(a.k),pct=t>0?Math.round(sp/t*100):0,over=t>0&&sp>t;
+      return `<div class="catrow" data-cat="${esc(a.k)}"><div class="catrow-top"><span>${a.e} ${esc(a.k)}</span><span style="color:${over?'var(--rojo)':'var(--soft)'}">${fmt(sp)} / ${fmt(t)}${over?' ⚠️':''}</span></div><div class="bar" style="margin-top:5px"><span style="width:${Math.min(100,pct)}%;background:${catBarColor(pct)}"></span></div></div>`;
+    }).join('');
+  box.querySelectorAll('.catrow').forEach(el=>el.onclick=async()=>{const k=el.dataset.cat;const v=await promptBox('Tope mensual para “'+k+'”:',catLimit(k));if(v===null)return;const n=Math.max(0,Math.round(+v||0));DB.catLimits=DB.catLimits||{};DB.catLimits[k]=n;persist();render();showToast('Tope de <b>'+esc(k)+'</b> actualizado a <b>'+fmt(n)+'</b>.');});
 }
 
 /* ---- calendario del mes ---- */
@@ -813,7 +838,8 @@ function renderCalendar(){
   const firstW=(dates[0].getDay()+6)%7;
   let html='<div class="cal-grid">'+['Lu','Ma','Mi','Ju','Vi','Sa','Do'].map(d=>`<div class="cal-h">${d}</div>`).join('');
   for(let i=0;i<firstW;i++)html+='<div></div>';
-  dates.forEach(dt=>{const ds=ymd(dt),dn=dt.getDate();const hasP=persByDate[ds]!==undefined,hasD=dueSet[dn];let cls='cal-d';if(hasD)cls+=' cal-due-day';else if(hasP)cls+=' cal-p';const dot=(hasD&&hasP)?'<span class="cal-dot-p"></span>':'';html+=`<div class="${cls}"${(hasP||hasD)?` data-cald="${ds}" data-caldn="${dn}"`:''}>${dn}${dot}</div>`;});
+  const hoy=ymd(new Date());
+  dates.forEach(dt=>{const ds=ymd(dt),dn=dt.getDate();const hasP=persByDate[ds]!==undefined,hasD=dueSet[dn];let cls='cal-d';if(hasD)cls+=' cal-due-day';else if(hasP)cls+=' cal-p';if(ds===hoy)cls+=' cal-today';const dot=(hasD&&hasP)?'<span class="cal-dot-p"></span>':'';html+=`<div class="${cls}"${(hasP||hasD)?` data-cald="${ds}" data-caldn="${dn}"`:''}>${dn}${dot}</div>`;});
   html+='</div>';
   box.innerHTML=html;
   box.querySelectorAll('[data-cald]').forEach(el=>el.onclick=()=>{const ds=el.dataset.cald,dn=+el.dataset.caldn,parts=ds.split('-');const items=(c.pers||[]).filter(x=>x.date===ds);const lines=[];if(dueSet[dn])lines.push('💳 Pago/límite de tarjeta');items.forEach(x=>lines.push(esc(x.name)+' — '+fmt(x.amt)));showToast('📅 '+(+parts[2])+' de '+MONTHS[(+parts[1])-1]+':<br>'+lines.join('<br>'));});
@@ -1216,7 +1242,7 @@ $('d-ics').onclick=()=>{
 };
 $('i-add').onclick=()=>{const n=$('i-name').value.trim(),a=+$('i-amt').value;if(!n||!a||a<=0){showToast('Escribe el concepto y un valor válido 🌷');return;}M().incomes.push({name:n,amt:a});$('i-name').value='';$('i-amt').value='';persist();render();$('i-name').focus();tip('iadd','💵 Puedes agregar varias fuentes de ingreso (salario, freelance, extras...). Todas se suman.');};
 $('h-add').onclick=()=>{const n=$('h-name').value.trim(),a=+$('h-amt').value;if(!n||!a||a<=0){showToast('Escribe el concepto y un valor válido 🌷');return;}M().hogar.push({name:n,amt:a,paid:false});$('h-name').value='';$('h-amt').value='';syncTemplate();persist();render();$('h-name').focus();tip('hadd','🏠 Toca el <b>círculo</b> de un gasto cuando lo pagues, y toca su <b>valor</b> para editarlo. Se ordenan de mayor a menor solos.');};
-$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null,cat=$('p-cat').value||'Otros';if(!n||!a||a<=0){showToast('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt,cat});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su categoría y fecha. Abajo verás el pentágono por categoría.');};
+$('p-add').onclick=()=>{const n=$('p-name').value.trim(),a=+$('p-amt').value,dt=$('p-date').value||null,cat=$('p-cat').value||'Hogar y otros';if(!n||!a||a<=0){showToast('Escribe un nombre y un valor válido 🌷');return;}M().pers.push({name:n,amt:a,date:dt,cat});$('p-name').value='';$('p-amt').value='';$('p-date').value='';persist();render();$('p-name').focus();tip('padd','🛍️ Aquí van tus gastos variables, con su categoría y fecha. Abajo verás el pentágono por categoría.');};
 $('i-amt').onkeydown=e=>{if(e.key==='Enter')$('i-add').click();};
 $('h-amt').onkeydown=e=>{if(e.key==='Enter')$('h-add').click();};
 $('p-amt').onkeydown=e=>{if(e.key==='Enter')$('p-add').click();};
