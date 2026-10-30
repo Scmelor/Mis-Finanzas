@@ -263,6 +263,7 @@
   .catrow:active{background:var(--field)}
   .catrow-top{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--text)}
   .catrow .bar{height:12px}
+  .pcat-sel{flex:1 1 100%;margin-top:7px;font-size:.8rem;padding:8px 9px;border-radius:11px;background:var(--field);color:var(--text);border:1.5px solid var(--border)}
   .drop{border:2px dashed var(--border);border-radius:18px;padding:22px;text-align:center;color:var(--muted);background:var(--field);cursor:pointer}
   .drop b{color:var(--pers)}
   .tx-list{max-height:260px;overflow-y:auto;margin-top:10px;border:1px solid var(--border);border-radius:14px}
@@ -319,7 +320,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v46</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v47</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -749,8 +750,9 @@ function render(){
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
   $('p-bar').style.background=pBarColor(c.pLimit>0?spent/c.pLimit*100:0);
   const pl=$('pers-list');
-  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>{const pc=pcat(x.cat);return `<div class="item pers-i"><span class="nm"><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${pc.c};margin-right:5px"></span>${esc(x.name)} <small style="color:var(--soft);font-weight:600">${pc.e} ${esc(pc.k)}${x.date?' · '+x.date.split('-').reverse().join('/'):''}</small></span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`;}).join(''):'';
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>{const pc=pcat(x.cat);const opts=PCATS.map(p=>`<option value="${esc(p.k)}"${pc.k===p.k?' selected':''}>${p.e} ${esc(p.k)}</option>`).join('');return `<div class="item pers-i" style="flex-wrap:wrap"><span class="nm"><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${pc.c};margin-right:5px"></span>${esc(x.name)}${x.date?` <small style="color:var(--soft);font-weight:600">${x.date.split('-').reverse().join('/')}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button><select class="pcat-sel" data-pcatsel="${i}" title="Cambiar categoría">${opts}</select></div>`;}).join(''):'';
   pl.querySelectorAll('[data-pamt]').forEach(inp=>{inp.oninput=()=>{c.pers[+inp.dataset.pamt].amt=+inp.value||0;persist();renderTotals();};});
+  pl.querySelectorAll('[data-pcatsel]').forEach(sel=>sel.onchange=()=>{c.pers[+sel.dataset.pcatsel].cat=sel.value;persist();render();showToast('Categoría actualizada 🏷️');});
   pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);persist();render();});
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
 
