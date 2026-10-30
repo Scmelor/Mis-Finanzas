@@ -263,7 +263,6 @@
   .catrow:active{background:var(--field)}
   .catrow-top{display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--text)}
   .catrow .bar{height:12px}
-  .pcat-sel{flex:1 1 100%;margin-top:7px;font-size:.8rem;padding:8px 9px;border-radius:11px;background:var(--field);color:var(--text);border:1.5px solid var(--border)}
   .drop{border:2px dashed var(--border);border-radius:18px;padding:22px;text-align:center;color:var(--muted);background:var(--field);cursor:pointer}
   .drop b{color:var(--pers)}
   .tx-list{max-height:260px;overflow-y:auto;margin-top:10px;border:1px solid var(--border);border-radius:14px}
@@ -320,7 +319,7 @@
   <div class="topbar">
     <span class="who" id="who"></span>
     <span class="topright">
-      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v47</span>
+      <span style="font-size:.72rem;color:var(--verde);font-weight:800;align-self:center">v48</span>
       <div class="theme-wrap">
         <button class="theme-btn" id="theme-btn">Tema ▾</button>
         <div class="theme-pop" id="theme-pop">
@@ -611,6 +610,15 @@ function tip(key,msg){try{const seen=JSON.parse(localStorage.getItem('tipsSeen')
 let modalResolve=null, modalMode='confirm';
 function confirmBox(msg){return new Promise(res=>{modalResolve=res;modalMode='confirm';$('modal-msg').textContent=msg;$('modal-input').style.display='none';$('modal-cancel').style.display='';$('modal').style.display='flex';});}
 function promptBox(msg,def){return new Promise(res=>{modalResolve=res;modalMode='prompt';$('modal-msg').textContent=msg;const inp=$('modal-input');inp.style.display='';inp.value=(def!=null?def:'');$('modal-cancel').style.display='';$('modal').style.display='flex';setTimeout(()=>{try{inp.focus();}catch(e){}},60);});}
+function pickCategory(current){return new Promise(res=>{
+  const ov=document.createElement('div');ov.className='gate';ov.style.zIndex='80';ov.style.display='flex';
+  const box=document.createElement('div');box.className='box';box.style.maxWidth='340px';
+  box.innerHTML='<p style="color:var(--ink);font-weight:800;margin-bottom:14px;text-align:center">🏷️ Elige la categoría</p>';
+  function close(v){try{document.body.removeChild(ov);}catch(_){}res(v);}
+  PCATS.forEach(p=>{const b=document.createElement('button');b.className='mini';b.style.cssText='width:100%;text-align:left;margin-bottom:8px;padding:12px 14px;font-size:.9rem'+(p.k===current?';border:2px solid var(--pers);color:var(--pers);font-weight:800':'');b.innerHTML='<span style="font-size:1.2rem;margin-right:8px">'+p.e+'</span>'+esc(p.k);b.onclick=()=>close(p.k);box.appendChild(b);});
+  const cancel=document.createElement('button');cancel.className='mini';cancel.style.cssText='width:100%;margin-top:4px;padding:11px';cancel.textContent='Cancelar';cancel.onclick=()=>close(null);box.appendChild(cancel);
+  ov.appendChild(box);ov.onclick=e=>{if(e.target===ov)close(null);};document.body.appendChild(ov);
+});}
 function modalDone(v){$('modal').style.display='none';const r=modalResolve;modalResolve=null;if(r)r(v);}
 document.getElementById('modal-ok').onclick=()=>modalDone(modalMode==='prompt'?$('modal-input').value:true);
 document.getElementById('modal-cancel').onclick=()=>modalDone(modalMode==='prompt'?null:false);
@@ -750,9 +758,9 @@ function render(){
   $('p-bar').style.width=(c.pLimit>0?Math.min(100,spent/c.pLimit*100):0)+'%';
   $('p-bar').style.background=pBarColor(c.pLimit>0?spent/c.pLimit*100:0);
   const pl=$('pers-list');
-  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>{const pc=pcat(x.cat);const opts=PCATS.map(p=>`<option value="${esc(p.k)}"${pc.k===p.k?' selected':''}>${p.e} ${esc(p.k)}</option>`).join('');return `<div class="item pers-i" style="flex-wrap:wrap"><span class="nm"><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${pc.c};margin-right:5px"></span>${esc(x.name)}${x.date?` <small style="color:var(--soft);font-weight:600">${x.date.split('-').reverse().join('/')}</small>`:''}</span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button><select class="pcat-sel" data-pcatsel="${i}" title="Cambiar categoría">${opts}</select></div>`;}).join(''):'';
+  pl.innerHTML=c.pers.length?c.pers.map((x,i)=>{const pc=pcat(x.cat);return `<div class="item pers-i" data-pi="${i}" title="Toca para cambiar la categoría"><span class="nm"><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${pc.c};margin-right:5px"></span>${esc(x.name)} <small style="color:var(--soft);font-weight:600">${pc.e} ${esc(pc.k)}${x.date?' · '+x.date.split('-').reverse().join('/'):''}</small></span><input class="d-amt-inline" type="number" inputmode="numeric" min="0" data-pamt="${i}" value="${x.amt||''}" placeholder="valor"><button class="del" data-pdel="${i}">✕</button></div>`;}).join(''):'';
   pl.querySelectorAll('[data-pamt]').forEach(inp=>{inp.oninput=()=>{c.pers[+inp.dataset.pamt].amt=+inp.value||0;persist();renderTotals();};});
-  pl.querySelectorAll('[data-pcatsel]').forEach(sel=>sel.onchange=()=>{c.pers[+sel.dataset.pcatsel].cat=sel.value;persist();render();showToast('Categoría actualizada 🏷️');});
+  pl.querySelectorAll('.pers-i').forEach(el=>el.onclick=async e=>{const tg=e.target;if(tg.tagName==='INPUT'||tg.dataset.pamt!==undefined||tg.dataset.pdel!==undefined)return;const i=+el.dataset.pi,cur=pcat(c.pers[i].cat).k,picked=await pickCategory(cur);if(picked&&picked!==c.pers[i].cat){c.pers[i].cat=picked;persist();render();showToast('Categoría actualizada 🏷️');}});
   pl.querySelectorAll('[data-pdel]').forEach(b=>b.onclick=()=>{c.pers.splice(+b.dataset.pdel,1);persist();render();});
   $('p-note').innerHTML=c.pLimit>0?(freeP>=0?`Gastado <b>${fmt(spent)}</b> · Te queda libre <b style="color:var(--verde)">${fmt(freeP)}</b>`:`Gastado <b>${fmt(spent)}</b> · Te pasaste por <b style="color:var(--rojo)">${fmt(-freeP)}</b>`):'Define un límite y registra tus gastos del día a día.';
 
